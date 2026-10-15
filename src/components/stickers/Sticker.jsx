@@ -3,7 +3,7 @@ import { cn } from '../../utils/misc.js';
 import { stickerLabel } from './builtin.js';
 
 /**
- * A built-in sticker: "blob:<name>" (the TEMU blob, drawn in SVG) or
+ * A built-in sticker: "blob:<name>" (the Vestige Chat blob, drawn in SVG) or
  * "emoji:<emoji>" (a big emoji with a white die-cut outline).
  */
 export const Sticker = memo(function Sticker({ value, size = 128, className }) {
@@ -29,7 +29,7 @@ export const Sticker = memo(function Sticker({ value, size = 128, className }) {
   return <BlobSticker name={name} size={size} className={className} label={stickerLabel(value)} />;
 });
 
-// ---- The TEMU blob ----
+// ---- The Vestige Chat blob ----
 
 const INK = '#3b2a22';
 const BODY = '#ffcb45';

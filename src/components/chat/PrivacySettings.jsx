@@ -64,7 +64,7 @@ export function PrivacySettings() {
 
       <PanelSection title="Linked devices">
         <p className="mb-2 text-xs text-ink-muted">
-          Each browser you use TEMU in has its own encryption keys. Remove the ones you no longer use; a new device can't read messages sent before it was set up.
+          Each browser you use Vestige Chat in has its own encryption keys. Remove the ones you no longer use; a new device can't read messages sent before it was set up.
         </p>
         <LinkedDevices />
       </PanelSection>

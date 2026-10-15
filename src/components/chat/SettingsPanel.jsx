@@ -66,8 +66,8 @@ export function SettingsPanel({ onClose }) {
       : device.status === 'denied'
         ? 'Blocked in your browser. Allow notifications for this site (🔒 in the address bar), then turn this on.'
         : pushAvailable
-          ? 'Get notified even when TEMU is closed.'
-          : 'Get notified while TEMU is open in another tab or minimised.';
+          ? 'Get notified even when Vestige Chat is closed.'
+          : 'Get notified while Vestige Chat is open in another tab or minimised.';
 
   return (
     <Panel title="Settings" onClose={onClose}>

@@ -15,9 +15,9 @@ const LONG_PRESS_MS = 450;
 
 /** Why an end-to-end encrypted message can't be shown on this device. */
 const UNDECRYPTABLE = {
-  'no-key': 'This message was sent before you set up TEMU on this device, so it can only be read on your other devices.',
+  'no-key': 'This message was sent before you set up Vestige Chat on this device, so it can only be read on your other devices.',
   failed: "This message couldn't be decrypted.",
-  unavailable: 'Open TEMU over HTTPS to read encrypted messages.',
+  unavailable: 'Open Vestige Chat over HTTPS to read encrypted messages.',
   'not-ready': 'Decrypting…',
 };
 const MENTION = /(@[\p{L}\p{N}_]+)/u;

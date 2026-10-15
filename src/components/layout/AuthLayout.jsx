@@ -1,5 +1,7 @@
-import { CheckCheck, Lock, MessageCircle, Zap } from 'lucide-react';
+import { CheckCheck, Lock, Zap } from 'lucide-react';
 import { Card } from '../ui/Card.jsx';
+
+export const LOGO_URL = 'https://s3-ap-southeast-1.amazonaws.com/vestdata/images/DistributorProfileImage/noimage.jpg';
 
 const FEATURES = [
   { icon: Zap, text: 'Instant delivery with live typing indicators' },
@@ -27,7 +29,7 @@ export function AuthLayout({ title, subtitle, children, footer }) {
             ))}
           </ul>
         </div>
-        <p className="relative text-sm text-white/70">Built with React, Socket.IO and SQL.</p>
+        <p className="relative text-sm text-white/70">Powered by Vestige</p>
       </aside>
 
       <main className="flex min-h-dvh items-center justify-center px-4 py-10 sm:px-6">
@@ -50,10 +52,8 @@ export function AuthLayout({ title, subtitle, children, footer }) {
 export function Logo({ light = false }) {
   return (
     <div className="relative flex items-center gap-2.5">
-      <span className={`flex size-9 items-center justify-center rounded-xl ${light ? 'bg-white text-brand-600' : 'bg-brand-600 text-white'}`}>
-        <MessageCircle className="size-5" aria-hidden />
-      </span>
-      <span className={`text-lg font-semibold ${light ? 'text-white' : 'text-ink'}`}>TEMU</span>
+      <img src={LOGO_URL} alt="" className="size-16 rounded-2xl bg-white object-contain p-1" draggable={false} />
+      <span className={`text-2xl font-semibold ${light ? 'text-white' : 'text-ink'}`}>Vestige Chat</span>
     </div>
   );
 }

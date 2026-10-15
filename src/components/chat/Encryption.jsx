@@ -15,7 +15,7 @@ export function EncryptionNotice({ className }) {
     <p className={className}>
       <span className="inline-flex max-w-md items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-left text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
         <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        Messages and calls are end-to-end encrypted. No one outside this chat, not even TEMU, can read or listen to them.
+        Messages and calls are end-to-end encrypted. No one outside this chat, not even Vestige Chat, can read or listen to them.
       </span>
     </p>
   );
@@ -29,7 +29,7 @@ export function EncryptionUnavailable() {
     <div className="flex items-start gap-2 border-t border-line bg-amber-50 px-gutter py-2.5 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
       <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
       {status === 'unavailable'
-        ? 'Encrypted messaging needs a secure connection. Open TEMU over HTTPS (or on localhost) to send and read messages.'
+        ? 'Encrypted messaging needs a secure connection. Open Vestige Chat over HTTPS (or on localhost) to send and read messages.'
         : 'Setting up encryption on this device failed. It will retry when the connection is back.'}
     </div>
   );
@@ -96,7 +96,7 @@ function SecurityCodeDialog({ peer, onClose }) {
           </p>
           <p className="flex items-start gap-2 text-xs text-ink-muted">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-            The code changes when either of you uses TEMU on a new device ({state.myDevices} of yours, {state.theirDevices} of {first}'s right now).
+            The code changes when either of you uses Vestige Chat on a new device ({state.myDevices} of yours, {state.theirDevices} of {first}'s right now).
           </p>
         </div>
       )}

@@ -1,4 +1,4 @@
-/* TEMU service worker: shows push notifications and opens the right chat on click.
+/* Vestige Chat service worker: shows push notifications and opens the right chat on click.
    It deliberately caches nothing, so the app is always loaded fresh. */
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -9,10 +9,10 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'TEMU', body: event.data ? event.data.text() : '' };
+    data = { title: 'Vestige Chat', body: event.data ? event.data.text() : '' };
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || 'TEMU', {
+    self.registration.showNotification(data.title || 'Vestige Chat', {
       body: data.body || 'New message',
       tag: data.tag, // one notification per chat; newer ones replace older
       renotify: Boolean(data.tag),

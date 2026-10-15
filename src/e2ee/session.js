@@ -122,7 +122,7 @@ const me = () => ({ userId: session.userId, deviceId: session.deviceId, privateK
 export function assertReady() {
   if (session.status === 'ready') return;
   if (session.status === 'unavailable') {
-    throw Object.assign(new Error('Encrypted messaging needs a secure connection. Open TEMU over HTTPS (or on localhost).'), { code: 'E2EE_UNAVAILABLE' });
+    throw Object.assign(new Error('Encrypted messaging needs a secure connection. Open Vestige Chat over HTTPS (or on localhost).'), { code: 'E2EE_UNAVAILABLE' });
   }
   // Still starting, or the server was unreachable: worth retrying.
   throw new Error('Encryption is still being set up on this device. Try again in a moment.');

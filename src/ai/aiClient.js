@@ -1,5 +1,5 @@
 /**
- * TEMU's on-device AI. Everything runs in this browser:
+ * Vestige Chat's on-device AI. Everything runs in this browser:
  * 1. Chrome's built-in AI (Gemini Nano) when the browser already has it — nothing to download;
  * 2. otherwise an open model (Qwen3-0.6B) downloaded once and cached, run in a worker
  *    on the graphics card (WebGPU) or the CPU (WebAssembly).

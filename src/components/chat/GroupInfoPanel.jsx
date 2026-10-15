@@ -283,7 +283,7 @@ function InviteLink({ conversationId, code }) {
               Copy
             </Button>
             {navigator.share && (
-              <Button size="sm" variant="secondary" icon={Share2} onClick={() => navigator.share({ title: 'Join my TEMU group', url: link }).catch(() => {})}>
+              <Button size="sm" variant="secondary" icon={Share2} onClick={() => navigator.share({ title: 'Join my Vestige Chat group', url: link }).catch(() => {})}>
                 Share
               </Button>
             )}

@@ -1,9 +1,9 @@
 /**
- * TEMU end-to-end encryption, built only on the standard Web Crypto API (so it
+ * Vestige Chat end-to-end encryption, built only on the standard Web Crypto API (so it
  * runs unchanged in browsers and in the server's tests).
  *
  * - Every device has an ECDH P-256 key pair. The private key is created
- *   non-extractable: even TEMU's own code can't read it out.
+ *   non-extractable: even Vestige Chat's own code can't read it out.
  * - Every message gets a fresh random 256-bit key. The content is encrypted
  *   with AES-256-GCM, bound (as additional data) to the chat, the sender and
  *   the sending device, so it can't be moved or re-attributed by the server.

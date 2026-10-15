@@ -835,12 +835,12 @@ export function ChatProvider({ children }) {
     return () => navigator.serviceWorker.removeEventListener('message', onMessage);
   }, [navigate]);
 
-  // Unread count in the browser tab title: "(3) TEMU".
+  // Unread count in the browser tab title: "(3) Vestige Chat".
   const totalUnread = Object.values(state.conversations).reduce((sum, c) => sum + c.unreadCount, 0);
   useEffect(() => {
-    document.title = totalUnread > 0 ? `(${totalUnread > 99 ? '99+' : totalUnread}) TEMU` : 'TEMU';
+    document.title = totalUnread > 0 ? `(${totalUnread > 99 ? '99+' : totalUnread}) Vestige Chat` : 'Vestige Chat';
     return () => {
-      document.title = 'TEMU';
+      document.title = 'Vestige Chat';
     };
   }, [totalUnread]);
 
