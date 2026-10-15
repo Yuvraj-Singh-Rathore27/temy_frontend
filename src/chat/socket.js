@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import { API_URL, tokenStore } from '../api/client.js';
+import { tokenStore } from '../api/client.js';
 import { deviceStore } from '../e2ee/device.js';
 
 /**
@@ -13,7 +13,7 @@ export const TAB_ID = (crypto.randomUUID?.() ?? `${Date.now()}${Math.random()}`)
  * every (re)connect attempt, so a refreshed token is picked up automatically.
  */
 export function createSocket() {
-  return io(API_URL || undefined, {
+  return io(import.meta.env.VITE_SOCKET_URL || undefined, {
     autoConnect: false,
     withCredentials: true,
     transports: ['websocket', 'polling'],
