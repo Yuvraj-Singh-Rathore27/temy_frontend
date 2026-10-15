@@ -4,3 +4,6 @@ dist/
 .env.*
 !.env.example
 *.log
+
+# Public (non-secret) production API URL is committed on purpose
+!.env.production
