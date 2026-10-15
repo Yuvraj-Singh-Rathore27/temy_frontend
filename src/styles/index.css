@@ -1,0 +1,241 @@
+@import 'tailwindcss';
+
+/* `dark:` utilities follow the app's own theme (set on <html data-theme>), not only the OS. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * Design tokens. Tailwind v4 turns every token below into utilities
+ * (bg-brand-600, text-ink-muted, rounded-bubble, shadow-card, font-sans, ...),
+ * so components never hard-code colours, radii or shadows. Themes, accent
+ * colours, font size and bubble shape only redefine these variables (see below).
+ */
+@theme {
+  /* Typography */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-message: 0.9375rem; /* chat bubbles, composer, chat title */
+  --text-message--line-height: 1.5rem;
+
+  /* Spacing (layout) — Tailwind's 0.25rem scale covers the rest */
+  --spacing-sidebar: 20rem;
+  --spacing-sidebar-lg: 24rem;
+  --spacing-gutter: 1rem; /* horizontal padding of panels */
+  --spacing-gutter-lg: 1.5rem;
+  --spacing-control: 2.75rem; /* height of inputs and the send button */
+
+  /* Brand: derived from the chosen accent (--accent-*), so every accent gets a full scale. */
+  --color-brand-50: color-mix(in oklab, var(--accent-500) 9%, white);
+  --color-brand-100: color-mix(in oklab, var(--accent-500) 17%, white);
+  --color-brand-200: color-mix(in oklab, var(--accent-500) 30%, white);
+  --color-brand-300: var(--accent-300);
+  --color-brand-400: var(--accent-400);
+  --color-brand-500: var(--accent-500);
+  --color-brand-600: var(--accent-600);
+  --color-brand-700: color-mix(in oklab, var(--accent-600) 82%, black);
+  --color-brand-800: color-mix(in oklab, var(--accent-600) 66%, black);
+  /* Dark brand background (hover states, hero panels) in both themes. */
+  --color-brand-strong: color-mix(in oklab, var(--accent-600) 82%, black);
+
+  /* Surfaces & text */
+  --color-canvas: #f4f5fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8f9fc;
+  --color-surface-sunken: #eef0f6;
+  --color-line: #e5e7ef;
+  --color-line-strong: #d4d7e2;
+  --color-ink: #0f172a;
+  --color-ink-soft: #334155;
+  --color-ink-muted: #64748b;
+  --color-ink-faint: #94a3b8;
+
+  /* Status */
+  --color-online: #22c55e;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-read: #38bdf8;
+  /* "Read" ticks on my own bubble: a colour that stands out from that accent (set per accent below). */
+  --color-read-on-bubble: var(--read-on-accent, #67e8f9);
+
+  /* Chat bubbles */
+  --color-bubble-out: var(--color-brand-600);
+  --color-bubble-out-ink: #ffffff;
+  --color-bubble-in: #ffffff;
+  --color-bubble-in-ink: var(--color-ink);
+
+  /* Radius */
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+  --radius-bubble: 1.125rem;
+  --radius-pill: 1.375rem;
+
+  /* Shadows */
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+  --shadow-bubble: 0 1px 1px rgb(15 23 42 / 0.06);
+  --shadow-pop: 0 12px 32px -8px rgb(15 23 42 / 0.25);
+  --shadow-focus: 0 0 0 3px color-mix(in oklab, var(--accent-500) 28%, transparent);
+
+  /* Animation */
+  --animate-typing: typing-dot 1.2s infinite ease-in-out;
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-highlight: highlight 1.8s ease-out;
+
+  @keyframes highlight {
+    0%, 35% { box-shadow: 0 0 0 4px var(--color-brand-300); }
+    100% { box-shadow: var(--shadow-bubble); }
+  }
+
+  @keyframes typing-dot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-3px); opacity: 1; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ---- Accent colours (Settings → Appearance) ---- */
+:root,
+:root[data-accent='indigo'] { --read-on-accent: #67e8f9; --accent-300: #a5b4fc; --accent-400: #818cf8; --accent-500: #6366f1; --accent-600: #4f46e5; }
+:root[data-accent='emerald'] { --read-on-accent: #7dd3fc; --accent-300: #6ee7b7; --accent-400: #34d399; --accent-500: #10b981; --accent-600: #059669; }
+:root[data-accent='rose'] { --read-on-accent: #a5f3fc; --accent-300: #fda4af; --accent-400: #fb7185; --accent-500: #f43f5e; --accent-600: #e11d48; }
+:root[data-accent='amber'] { --read-on-accent: #bae6fd; --accent-300: #fcd34d; --accent-400: #fbbf24; --accent-500: #f59e0b; --accent-600: #c2710c; }
+:root[data-accent='sky'] { --read-on-accent: #fde047; --accent-300: #7dd3fc; --accent-400: #38bdf8; --accent-500: #0ea5e9; --accent-600: #0284c7; }
+:root[data-accent='violet'] { --read-on-accent: #67e8f9; --accent-300: #c4b5fd; --accent-400: #a78bfa; --accent-500: #8b5cf6; --accent-600: #7c3aed; }
+:root[data-accent='teal'] { --read-on-accent: #fde047; --accent-300: #5eead4; --accent-400: #2dd4bf; --accent-500: #14b8a6; --accent-600: #0d9488; }
+
+/* ---- Dark theme ---- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-canvas: #0b1020;
+  --color-surface: #121826;
+  --color-surface-muted: #182031;
+  --color-surface-sunken: #1f2939;
+  --color-line: #263043;
+  --color-line-strong: #364156;
+  --color-ink: #e6e9f0;
+  --color-ink-soft: #c4cbd8;
+  --color-ink-muted: #8d97a9;
+  --color-ink-faint: #64708a;
+
+  /* Tints become dark, and "dark" brand text becomes light so it stays readable. */
+  --color-brand-50: color-mix(in oklab, var(--accent-500) 16%, #121826);
+  --color-brand-100: color-mix(in oklab, var(--accent-500) 26%, #121826);
+  --color-brand-200: color-mix(in oklab, var(--accent-500) 40%, #121826);
+  --color-brand-600: var(--accent-500);
+  --color-brand-700: var(--accent-300);
+  --color-brand-800: color-mix(in oklab, var(--accent-300) 55%, white);
+  --color-brand-strong: color-mix(in oklab, var(--accent-600) 80%, black);
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-danger-soft: #3a1619;
+
+  --color-bubble-in: #1f2939;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-bubble: 0 1px 1px rgb(0 0 0 / 0.35);
+  --shadow-pop: 0 12px 32px -8px rgb(0 0 0 / 0.7);
+}
+
+/* ---- Font size (rem-based utilities scale with the root size) ---- */
+:root[data-font='small'] { font-size: 14px; }
+:root[data-font='large'] { font-size: 18px; }
+
+/* ---- Bubble shape ---- */
+:root[data-bubble='soft'] { --radius-bubble: 0.625rem; }
+:root[data-bubble='square'] { --radius-bubble: 0.25rem; }
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+  }
+  /* Full-height app shell that respects mobile browser chrome. */
+  .app-height {
+    height: 100dvh;
+  }
+}
+
+/* ---- Chat wallpapers (presets are pure CSS: no images to download) ---- */
+.wallpaper {
+  --wall-ink: color-mix(in oklab, var(--color-ink) 9%, transparent);
+  background-color: var(--color-canvas);
+}
+.wallpaper-dots {
+  background-image: radial-gradient(var(--wall-ink) 1.2px, transparent 1.6px);
+  background-size: 18px 18px;
+}
+.wallpaper-grid {
+  background-image:
+    linear-gradient(var(--wall-ink) 1px, transparent 1px),
+    linear-gradient(90deg, var(--wall-ink) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.wallpaper-waves {
+  background-image: repeating-radial-gradient(circle at 0 0, transparent 0 22px, var(--wall-ink) 23px, transparent 24px);
+  background-size: 48px 48px;
+}
+.wallpaper-sunset { background-image: linear-gradient(160deg, #fde2c8, #f9c5d1 55%, #e0c3fc); }
+.wallpaper-ocean { background-image: linear-gradient(160deg, #d6f1ff, #b9dcff 55%, #c7d2fe); }
+.wallpaper-forest { background-image: linear-gradient(160deg, #e3f6e8, #c4ebd0 55%, #d8f3dc); }
+.wallpaper-lavender { background-image: linear-gradient(160deg, #f1ecff, #e9dcff 55%, #fbe1f0); }
+.wallpaper-night { background-image: linear-gradient(160deg, #1e293b, #312e81 60%, #1e1b4b); }
+:root[data-theme='dark'] .wallpaper-sunset { background-image: linear-gradient(160deg, #3b2418, #3d1f2b 55%, #2a1f3d); }
+:root[data-theme='dark'] .wallpaper-ocean { background-image: linear-gradient(160deg, #0c2233, #12263f 55%, #1b1f3f); }
+:root[data-theme='dark'] .wallpaper-forest { background-image: linear-gradient(160deg, #0f241a, #133024 55%, #10261c); }
+:root[data-theme='dark'] .wallpaper-lavender { background-image: linear-gradient(160deg, #221a36, #2a1f42 55%, #351d33); }
+/* Custom photos: dimmed so bubbles stay readable (more in dark mode). */
+.wallpaper-custom {
+  --wall-dim: 0.06;
+  background-size: cover;
+  background-position: center;
+}
+:root[data-theme='dark'] .wallpaper-custom { --wall-dim: 0.5; }
+
+/* Map pin used by Leaflet maps (components/location). */
+.temu-pin {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--color-brand-600);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgb(15 23 42 / 0.35);
+  transform: rotate(-45deg);
+}
+.temu-pin-live {
+  background: var(--color-danger);
+  animation: temu-pin-pulse 1.6s ease-out infinite;
+}
+@keyframes temu-pin-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0.55); }
+  100% { box-shadow: 0 0 0 14px rgb(220 38 38 / 0); }
+}
+/* Keep Leaflet's own stacking below our menus and dialogs. */
+.leaflet-container {
+  z-index: 0;
+  font: inherit;
+}
+:root[data-theme='dark'] .leaflet-tile-pane {
+  filter: brightness(0.75) contrast(1.1);
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
