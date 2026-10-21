@@ -30,8 +30,11 @@ export default function RegisterPage() {
     setFormError('');
     try {
       // Step 1: create the account. Step 2 (verify page) confirms the emailed code.
-      const result = await register({ name: name.trim(), email: email.trim(), password });
-      navigate('/verify-email', { state: result });
+      // TEMPORARILY DISABLED email verification: register signs the user in directly.
+      // const result = await register({ name: name.trim(), email: email.trim(), password });
+      // navigate('/verify-email', { state: result });
+      await register({ name: name.trim(), email: email.trim(), password });
+      navigate('/', { replace: true });
     } catch (error) {
       form.setErrors(error.fieldErrors ?? {});
       setFormError(error.code === 'VALIDATION_ERROR' ? '' : error.message);

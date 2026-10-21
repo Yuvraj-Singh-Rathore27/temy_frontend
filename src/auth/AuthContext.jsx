@@ -41,7 +41,9 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (credentials) => startSession(await authApi.login(credentials)), [startSession]);
   /** Creates the account; resolves with { email, retryAfterSeconds, devOtp? }. The session starts after verifyEmail. */
-  const register = useCallback((data) => authApi.register(data), []);
+  // TEMPORARILY DISABLED email verification: register now signs the user in directly.
+  // const register = useCallback((data) => authApi.register(data), []);
+  const register = useCallback(async (data) => startSession(await authApi.register(data)), [startSession]);
   const verifyEmail = useCallback(
     async (email, code) => startSession(await authApi.verifyEmail(email, code)),
     [startSession],
