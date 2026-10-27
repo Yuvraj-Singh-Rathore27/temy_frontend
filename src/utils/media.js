@@ -2,10 +2,10 @@ import { pdfPreview } from './pdf.js';
 // Mirrors the server's per-kind limits (server/.env MAX_*_MB). The server enforces them.
 export const MAX_BYTES = {
   image: 16 * 1024 * 1024,
-  video: 100 * 1024 * 1024,
+  video: 1024 * 1024 * 1024,
   audio: 32 * 1024 * 1024,
   voice: 32 * 1024 * 1024,
-  file: 100 * 1024 * 1024,
+  file: 1024 * 1024 * 1024,
 };
 export const MAX_FILES_PER_MESSAGE = 10;
 
