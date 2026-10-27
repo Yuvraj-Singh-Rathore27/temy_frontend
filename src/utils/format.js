@@ -60,10 +60,28 @@ export function formatLastSeen(value) {
   return `Last seen ${fullDateFormat.format(date)}`;
 }
 
+const graphemes = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+
+/** The first user-perceived character, so an emoji (even 👨‍👩‍👧) is never cut in half. */
+function firstCharacter(text) {
+  if (graphemes) return graphemes.segment(text)[Symbol.iterator]().next().value?.segment ?? '';
+  return Array.from(text)[0] ?? '';
+}
+
+/**
+ * "Aarav Sharma" → "AS". Uses the first letter or digit of the first and last word,
+ * skipping words without one (emoji), so "Product Launch 🚀" → "PL".
+ * A name of only emoji shows its first emoji.
+ */
 export function initials(name = '') {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  const first = parts[0][0] ?? '';
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  const trimmed = (name ?? '').trim();
+  if (!trimmed) return '?';
+  const letters = trimmed
+    .split(/\s+/)
+    .map((word) => word.match(/[\p{L}\p{N}]/u)?.[0])
+    .filter(Boolean);
+  if (letters.length === 0) return firstCharacter(trimmed);
+  const first = letters[0];
+  const last = letters.length > 1 ? letters[letters.length - 1] : '';
   return (first + last).toUpperCase();
 }

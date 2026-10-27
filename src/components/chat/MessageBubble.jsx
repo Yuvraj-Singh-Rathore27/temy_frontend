@@ -5,6 +5,7 @@ import { attachmentLabel, locationLabel } from '../../utils/media.js';
 import { groupReactions } from '../../utils/messages.js';
 import { LocationBubble } from '../location/LocationBubble.jsx';
 import { MessageAttachments } from '../media/MessageAttachments.jsx';
+import { RecordingNote } from '../calls/RecordingNote.jsx';
 import { avatarColor, cn } from '../../utils/misc.js';
 import { eventText, isMissedCall } from '../../utils/conversation.js';
 import { SecureImage } from '../media/SecureMedia.jsx';
@@ -78,6 +79,9 @@ export const MessageBubble = memo(function MessageBubble({
 
   const nameOf = (userId, name) => (userId === me ? 'You' : (name ?? peerName));
   const onBrand = mine && !isSticker; // text sits on the brand-coloured bubble
+
+  // A call recording: a small card with a player.
+  if (message.event?.type === 'call_recording') return <RecordingNote message={message} me={me} highlighted={highlighted} />;
 
   // "Alice added Bob", "Group renamed", …
   if (message.event) {

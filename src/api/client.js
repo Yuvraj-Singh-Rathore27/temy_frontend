@@ -84,8 +84,11 @@ async function rawFetch(path, { method = 'GET', body, headers = {}, signal, auth
   // Encrypted messages come back with this device's key only.
   if (auth && deviceStore.get()) finalHeaders['X-Device-Id'] = String(deviceStore.get());
   const isForm = body instanceof FormData;
+  // Raw bytes (call recording chunks) are sent as they are.
+  const isBinary = body instanceof Blob || body instanceof ArrayBuffer;
   // FormData sets its own multipart boundary header.
-  if (body !== undefined && !isForm) finalHeaders['Content-Type'] = 'application/json';
+  if (isBinary) finalHeaders['Content-Type'] = 'application/octet-stream';
+  else if (body !== undefined && !isForm) finalHeaders['Content-Type'] = 'application/json';
   if (auth && accessToken) finalHeaders.Authorization = `Bearer ${accessToken}`;
 
   let response;
@@ -93,7 +96,7 @@ async function rawFetch(path, { method = 'GET', body, headers = {}, signal, auth
     response = await fetch(`${API_URL}/api${path}`, {
       method,
       headers: finalHeaders,
-      body: body === undefined || isForm ? body : JSON.stringify(body),
+      body: body === undefined || isForm || isBinary ? body : JSON.stringify(body),
       credentials: 'include',
       signal,
     });

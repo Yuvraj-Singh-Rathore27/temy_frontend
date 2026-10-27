@@ -1,4 +1,4 @@
-import { decryptConversation, decryptMessages, decryptPin, searchLocal } from '../e2ee/session.js';
+import { decryptConversation, decryptMessages, decryptPin, searchLocal, warmSearch } from '../e2ee/session.js';
 import { http, request } from './client.js';
 
 // End-to-end encrypted messages are decrypted right here, as they arrive from the server,
@@ -82,7 +82,8 @@ export const conversationsApi = {
         .map((item) => (decrypted.has(item.id) ? { ...item, ...decrypted.get(item.id), messageId: item.messageId, senderId: item.senderId, senderName: item.senderName, createdAt: item.createdAt } : item)),
     };
   },
-  pins: (id) => http.get(`/conversations/${encodeURIComponent(id)}/pins`).then(async (r) => ({ ...r, pins: await Promise.all(r.pins.map(decryptPin)) })),
+  pins: (id) =>
+    http.get(`/conversations/${encodeURIComponent(id)}/pins`).then(async (r) => ({ ...r, pins: await Promise.all(r.pins.map((pin) => decryptPin(pin, Number(id)))) })),
   /** duration: '8h' | '1w' | 'always' */
   mute: (id, duration) => http.put(`/conversations/${encodeURIComponent(id)}/mute`, { duration }),
   unmute: (id) => http.delete(`/conversations/${encodeURIComponent(id)}/mute`),
@@ -119,6 +120,7 @@ export const messagesApi = {
     }
     return { messages: [...byId.values()].sort((a, b) => b.id - a.id).slice(0, 50) };
   },
+  warmSearch,
   starred: () => withMessages(http.get('/messages/starred')),
   updateLocation: (id, coords) => http.patch(messagePath(id, '/location'), coords),
   stopLiveLocation: (id) => http.delete(messagePath(id, '/location/live')),
@@ -175,6 +177,16 @@ export const callsApi = {
   history: (before) => http.get(`/calls${qs({ before })}`),
   hide: (callIds) => http.post('/calls/hide', { callIds }),
   clear: () => http.post('/calls/hide', { all: true }),
+  /** Group calls going on in my groups. */
+  active: () => http.get('/calls/active'),
+};
+
+/** Call recordings: started during a call, uploaded in chunks while recording, then finished. */
+export const recordingsApi = {
+  start: (callId, { kind, mimeType }) => http.post(`/calls/${callId}/recordings`, { kind, mimeType }),
+  uploadChunk: (recordingId, seq, blob) => http.put(`/recordings/${recordingId}/chunks/${seq}`, blob),
+  finish: (recordingId, durationMs) => http.post(`/recordings/${recordingId}/finish`, { durationMs }),
+  remove: (recordingId) => http.delete(`/recordings/${recordingId}`),
 };
 
 export const gifsApi = {

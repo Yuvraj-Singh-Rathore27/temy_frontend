@@ -30,7 +30,8 @@ import { ChatSearchPanel } from './MessageResults.jsx';
 import { PeerProfilePanel } from './PeerProfilePanel.jsx';
 import { PinnedBar } from './PinnedBar.jsx';
 import { EncryptionUnavailable } from './Encryption.jsx';
-import { CatchUpPanel } from './CatchUpPanel.jsx';
+// Catch me up (AI) is turned off for now.
+// import { CatchUpPanel } from './CatchUpPanel.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
 
 /** Loads the conversation (if not cached yet) and renders header, messages and composer. */
@@ -359,6 +360,7 @@ function OpenConversation({ conversation }) {
           </Button>
         </div>
       )}
+      {/* Catch me up (AI) is turned off for now.
       {catchUpChip && initialUnread >= 5 && panel !== 'catchup' && (
         <div className="flex justify-center px-3 pt-2">
           <span className="inline-flex items-center gap-1 rounded-full bg-surface pr-1 shadow-bubble">
@@ -371,6 +373,7 @@ function OpenConversation({ conversation }) {
           </span>
         </div>
       )}
+      */}
       <MessageList
         conversationId={id}
         peerName={title}
@@ -418,9 +421,11 @@ function OpenConversation({ conversation }) {
           <PeerProfilePanel peer={peer} conversationId={id} onClose={closePanel} />
         ))}
       {panel === 'search' && <ChatSearchPanel conversationId={id} onClose={closePanel} onSelect={selectResult} />}
+      {/* Catch me up (AI) is turned off for now.
       {panel === 'catchup' && (
         <CatchUpPanel conversation={conversation} thread={thread} initialUnread={initialUnread} me={me} myName={user?.name} onClose={closePanel} onJump={selectResult} />
       )}
+      */}
       {menu && (
         <MessageMenu message={menu.message} position={menu.position} options={menuOptions} onAction={onMenuAction} onClose={closeMenu} />
       )}

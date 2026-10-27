@@ -28,11 +28,19 @@ const listNames = (users = [], me) => {
   return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 };
 
-/** "Missed voice call", "Video call · 2:31"… (from the viewer's side). */
-export function callText({ type, status, durationSec = 0, callerId }, me) {
-  const kind = type === 'video' ? 'video call' : 'voice call';
+/** In a group call note: did I take part? (Whoever started it always did.) */
+const tookPart = ({ callerId, participantIds }, me) => callerId === me || Boolean(participantIds?.includes(me));
+
+/**
+ * "Missed voice call", "Video call · 2:31", "Group video call · 12:04"… (from the viewer's side).
+ * A group call I wasn't in counts as missed for me.
+ */
+export function callText(data, me) {
+  const { type, durationSec = 0, callerId, group } = data;
+  const kind = `${group ? 'group ' : ''}${type === 'video' ? 'video call' : 'voice call'}`;
   const Kind = kind[0].toUpperCase() + kind.slice(1);
   const outgoing = callerId === me;
+  const status = group && data.status === 'ended' && !tookPart(data, me) ? 'missed' : data.status;
   switch (status) {
     case 'ended': {
       const m = Math.floor(durationSec / 60);
@@ -50,8 +58,12 @@ export function callText({ type, status, durationSec = 0, callerId }, me) {
   }
 }
 
-/** A call I didn't pick up (shown in red). */
-export const isMissedCall = ({ status, callerId }, me) => callerId !== me && (status === 'missed' || status === 'busy');
+/** A call I didn't pick up (shown in red). In a group: one I was rung for and never joined. */
+export const isMissedCall = (data, me) => {
+  if (data.callerId === me) return false;
+  if (data.group) return data.status === 'missed' || !tookPart(data, me);
+  return data.status === 'missed' || data.status === 'busy';
+};
 
 /** Text of a system message, e.g. "Olivia added Ann and you". */
 export function eventText(message, me) {
@@ -60,6 +72,11 @@ export function eventText(message, me) {
   switch (type) {
     case 'call':
       return callText(data, me);
+    case 'call_recording': {
+      const m = Math.floor((data.durationSec ?? 0) / 60);
+      const s = String((data.durationSec ?? 0) % 60).padStart(2, '0');
+      return `${actor} recorded the ${data.kind === 'video' ? 'video' : 'voice'} call · ${m}:${s}`;
+    }
     case 'group_created':
       return `${actor} created the group "${data.name}"`;
     case 'members_added':

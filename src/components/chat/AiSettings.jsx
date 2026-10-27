@@ -38,12 +38,14 @@ export function AiSettings() {
 
   return (
     <PanelSection title="AI (on this device)">
+      {/* Catch me up (AI) is turned off for now, so its switch is hidden.
       <Switch
         label="AI features"
         description="Catch me up summaries. The AI runs in this browser: your messages are never sent to an AI company."
         checked={enabled}
         onChange={toggle}
       />
+      */}
       <Switch
         label="Smart replies"
         description="Tap-to-send suggestions above the message box for messages like “hi”, “thanks” or “where are you?” (English and Hinglish). Instant, with nothing to download."
@@ -53,11 +55,13 @@ export function AiSettings() {
           setReplies(value);
         }}
       />
+      {/* Which AI engine Catch me up would use; hidden while it is turned off.
       {engine && (
         <p className="mt-1 flex items-start gap-2 text-xs text-ink-muted">
           <Cpu className="mt-0.5 size-3.5 shrink-0" aria-hidden /> {ENGINE_LABEL[engine]}
         </p>
       )}
+      */}
       {downloaded && (
         <Button size="sm" variant="danger-ghost" icon={Trash2} onClick={remove} className="-ml-3 mt-2">
           Remove downloaded AI model ({engine === 'webgpu' ? MODEL_INFO.size.webgpu : MODEL_INFO.size.wasm})

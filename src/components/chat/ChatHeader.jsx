@@ -21,7 +21,8 @@ export const ChatHeader = memo(function ChatHeader({ conversationId, peer, peerA
       { label: 'Contact info', icon: Info, onClick: onOpenProfile },
       // The search button is hidden on small screens to make room for the call buttons.
       { label: 'Search', icon: Search, onClick: onOpenSearch },
-      { label: 'Catch me up (AI)', icon: Sparkles, onClick: onCatchUp },
+      // Catch me up (AI) is turned off for now.
+      // { label: 'Catch me up (AI)', icon: Sparkles, onClick: onCatchUp },
       mutedUntil
         ? { label: 'Unmute notifications', icon: Bell, onClick: () => run(onUnmute) }
         : { label: 'Mute notifications', icon: BellOff, onClick: onOpenMute },

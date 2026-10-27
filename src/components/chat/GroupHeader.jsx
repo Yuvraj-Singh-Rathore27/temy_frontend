@@ -1,11 +1,44 @@
 import { memo, useMemo } from 'react';
-import { ArrowLeft, Bell, BellOff, Image as ImageIcon, Info, LogOut, MoreVertical, Search, Sparkles } from 'lucide-react';
+import { ArrowLeft, Bell, BellOff, Image as ImageIcon, Info, LogOut, MoreVertical, Phone, Search, Sparkles, Video } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useGroupCallActions, useGroupCallState } from '../../calls/GroupCallContext.jsx';
 import { useChatActions } from '../../chat/ChatContext.jsx';
 import { chatAvatar } from '../../utils/conversation.js';
 import { Avatar } from '../ui/Avatar.jsx';
 import { IconButton } from '../ui/Button.jsx';
 import { Menu } from '../ui/Menu.jsx';
+
+/**
+ * Group call buttons: call the group (voice / video), or join the call that is going on,
+ * with how many people are in it ("Join · 3/6").
+ */
+function GroupCallButtons({ conversationId }) {
+  const { activeCalls, call } = useGroupCallState();
+  const { startGroupCall, joinGroupCall } = useGroupCallActions();
+  const active = activeCalls[conversationId];
+  if (call && call.conversationId === conversationId && call.phase !== 'ended' && call.phase !== 'incoming') return null; // I'm in it
+  if (active) {
+    const Icon = active.type === 'video' ? Video : Phone;
+    const full = active.participants.length >= active.maxParticipants;
+    return (
+      <button
+        type="button"
+        onClick={() => joinGroupCall(active.id, active.type)}
+        disabled={full}
+        aria-label={full ? `Call is full (${active.maxParticipants} people)` : `Join call (${active.participants.length} of ${active.maxParticipants})`}
+        className="flex shrink-0 items-center gap-1.5 rounded-full bg-success px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-success"
+      >
+        <Icon className="size-4" aria-hidden /> {full ? 'Full' : 'Join'} · {active.participants.length}/{active.maxParticipants}
+      </button>
+    );
+  }
+  return (
+    <>
+      <IconButton icon={Video} label="Group video call" onClick={() => startGroupCall({ conversationId, type: 'video' })} />
+      <IconButton icon={Phone} label="Group voice call" onClick={() => startGroupCall({ conversationId, type: 'voice' })} />
+    </>
+  );
+}
 
 /** Header of a group chat: photo, name, who's in it (or who is typing), and the group menu. */
 export const GroupHeader = memo(function GroupHeader({
@@ -34,7 +67,8 @@ export const GroupHeader = memo(function GroupHeader({
   const menuItems = useMemo(
     () => [
       { label: 'Group info', icon: Info, onClick: onOpenInfo },
-      { label: 'Catch me up (AI)', icon: Sparkles, onClick: onCatchUp },
+      // Catch me up (AI) is turned off for now.
+      // { label: 'Catch me up (AI)', icon: Sparkles, onClick: onCatchUp },
       mutedUntil
         ? { label: 'Unmute notifications', icon: Bell, onClick: () => onUnmute().catch((e) => onError(e.message)) }
         : { label: 'Mute notifications', icon: BellOff, onClick: onOpenMute },
@@ -75,7 +109,8 @@ export const GroupHeader = memo(function GroupHeader({
           </p>
         </div>
       </button>
-      <IconButton icon={Search} label="Search messages" onClick={onOpenSearch} />
+      <GroupCallButtons conversationId={conversation.id} />
+      <IconButton icon={Search} label="Search messages" onClick={onOpenSearch} className="hidden sm:inline-flex" />
       <Menu icon={MoreVertical} label="Group options" items={menuItems} />
     </header>
   );

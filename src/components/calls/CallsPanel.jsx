@@ -3,6 +3,7 @@ import { Phone, PhoneIncoming, PhoneMissed, PhoneOutgoing, Trash2, Video } from 
 import { useNavigate } from 'react-router-dom';
 import { callsApi } from '../../api/endpoints.js';
 import { useCallActions } from '../../calls/CallContext.jsx';
+import { useGroupCallActions } from '../../calls/GroupCallContext.jsx';
 import { useChatActions } from '../../chat/ChatContext.jsx';
 import { formatListTime } from '../../utils/format.js';
 import { callText, isMissedCall } from '../../utils/conversation.js';
@@ -105,9 +106,13 @@ export function CallsPanel({ query = '' }) {
 
 const CallRow = memo(function CallRow({ call, me, onRemove }) {
   const { startCall } = useCallActions();
+  const { startGroupCall } = useGroupCallActions();
   const navigate = useNavigate();
   const callerId = call.direction === 'outgoing' ? me : call.peer.id;
-  const data = { type: call.type, status: call.status, durationSec: call.durationSec, callerId };
+  // Group calls: the server already says "missed" when I never joined.
+  const data = { type: call.type, status: call.status, durationSec: call.durationSec, callerId, group: call.group, participantIds: call.status === 'missed' ? [] : [me] };
+  const callBack = () =>
+    call.group ? startGroupCall({ conversationId: call.conversationId, type: call.type }) : startCall({ conversationId: call.conversationId, peer: call.peer, type: call.type });
   const missed = isMissedCall(data, me);
   const DirectionIcon = missed ? PhoneMissed : call.direction === 'outgoing' ? PhoneOutgoing : PhoneIncoming;
   const CallIcon = call.type === 'video' ? Video : Phone;
@@ -139,7 +144,7 @@ const CallRow = memo(function CallRow({ call, me, onRemove }) {
       <IconButton
         icon={CallIcon}
         label={`${call.type === 'video' ? 'Video' : 'Voice'} call ${call.peer.name}`}
-        onClick={() => startCall({ conversationId: call.conversationId, peer: call.peer, type: call.type })}
+        onClick={callBack}
         className="text-brand-600"
       />
     </div>

@@ -109,11 +109,18 @@ export const keystore = {
   deleteLiveKey: (messageId) => run('liveKeys', 'readwrite', (s) => s.delete(messageId)),
 
   /** Remember decrypted text for on-device search (per signed-in account). */
-  saveTexts: (records) =>
-    run('texts', 'readwrite', (s) => {
+  saveTexts: async (records) => {
+    await run('texts', 'readwrite', (s) => {
       for (const record of records) s.put(record);
-    }),
-  deleteText: (id) => run('texts', 'readwrite', (s) => s.delete(id)),
+    });
+    changeTexts({ save: records });
+  },
+  deleteText: async (id) => {
+    await run('texts', 'readwrite', (s) => s.delete(id));
+    changeTexts({ remove: id });
+  },
+  /** Start loading the texts for search (e.g. while the user is still typing). */
+  warmTexts: (ownerId) => textsFor(ownerId).catch(() => {}),
 
   saveGif: (record) => run('gifs', 'readwrite', (s) => s.put(record)),
   /** Newest first, one per file. */
@@ -129,10 +136,66 @@ export const keystore = {
   /** Messages of `ownerId` whose text contains `query` (case-insensitive), newest first. */
   searchTexts: async (ownerId, query, { conversationId, limit = 50 } = {}) => {
     const needle = query.toLocaleLowerCase();
-    const all = await run('texts', 'readonly', (s) => s.index('byOwner').getAll(ownerId));
-    return all
-      .filter((r) => (!conversationId || r.conversationId === conversationId) && r.text.toLocaleLowerCase().includes(needle))
-      .sort((a, b) => b.id - a.id)
-      .slice(0, limit);
+    const matches = [];
+    for (const { record, lower } of (await textsFor(ownerId)).values()) {
+      if ((!conversationId || record.conversationId === conversationId) && lower.includes(needle)) matches.push(record);
+    }
+    return matches.sort((a, b) => b.id - a.id).slice(0, limit);
   },
 };
+
+/**
+ * Reading every saved text from IndexedDB takes about a second per 100,000 texts (counting
+ * them takes half that), so a search keeps them in memory (lower-cased) for a while: typing
+ * a few searches in a row reads the database once. Every change made here or in another tab
+ * (BroadcastChannel) is applied to the copy; changes arriving while it loads are applied after.
+ */
+const TEXT_CACHE_MS = 2 * 60_000;
+let textCache = null; // { ownerId, rows: Map<id, { record, lower }>, timer }
+let textLoad = null; // { ownerId, promise, pending: [change] } while the texts are being read
+const textChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('temu-e2ee-texts') : null;
+if (textChannel) textChannel.onmessage = (event) => applyTextChange(event.data);
+
+const cacheRow = (record) => ({ record, lower: record.text.toLocaleLowerCase() });
+
+function dropTextCache() {
+  clearTimeout(textCache?.timer);
+  textCache = null;
+}
+
+/** `change`: { save: [record] } or { remove: id }. */
+function applyTextChange(change) {
+  textLoad?.pending.push(change);
+  if (!textCache) return;
+  for (const record of change.save ?? []) if (record.ownerId === textCache.ownerId) textCache.rows.set(record.id, cacheRow(record));
+  if (change.remove != null) textCache.rows.delete(change.remove);
+}
+
+function changeTexts(change) {
+  applyTextChange(change);
+  textChannel?.postMessage(change);
+}
+
+async function textsFor(ownerId) {
+  if (textCache?.ownerId !== ownerId) {
+    if (textLoad?.ownerId !== ownerId) {
+      const load = { ownerId, pending: [] };
+      load.promise = run('texts', 'readonly', (s) => s.index('byOwner').getAll(ownerId))
+        .then((all) => {
+          if (textLoad === load) textLoad = null; // before replaying, so the replay isn't queued again
+          dropTextCache();
+          textCache = { ownerId, rows: new Map(all.map((record) => [record.id, cacheRow(record)])), timer: null };
+          for (const change of load.pending) applyTextChange(change);
+        })
+        .finally(() => {
+          if (textLoad === load) textLoad = null;
+        });
+      textLoad = load;
+    }
+    await textLoad.promise;
+  }
+  if (textCache?.ownerId !== ownerId) return new Map(); // another account signed in meanwhile
+  clearTimeout(textCache.timer);
+  textCache.timer = setTimeout(dropTextCache, TEXT_CACHE_MS);
+  return textCache.rows;
+}

@@ -5,8 +5,10 @@
  */
 let loader = null;
 
+// The legacy build: the modern one calls Map.prototype.getOrInsertComputed, which many
+// browsers in use don't have yet (e.g. Chrome 141, Firefox 142), so pages rendered blank there.
 function loadPdfJs() {
-  loader ??= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')]).then(([pdfjs, worker]) => {
+  loader ??= Promise.all([import('pdfjs-dist/legacy/build/pdf.mjs'), import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url')]).then(([pdfjs, worker]) => {
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
     return pdfjs;
   });

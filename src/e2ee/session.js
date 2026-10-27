@@ -279,10 +279,13 @@ export async function decryptConversation(conversation) {
   return { ...conversation, lastMessage: await decryptMessage(conversation.lastMessage) };
 }
 
-/** Pins carry the same payload as messages (but `messageId` instead of `id`). */
-export async function decryptPin(pin) {
+/**
+ * Pins carry the same payload as messages (but `messageId` instead of `id`, and no
+ * conversationId, which decryption needs: it is part of the ciphertext's authenticated data).
+ */
+export async function decryptPin(pin, conversationId) {
   if (!pin?.e2ee) return pin;
-  const message = await decryptMessage({ ...pin, id: pin.messageId, attachments: [] });
+  const message = await decryptMessage({ ...pin, conversationId: pin.conversationId ?? conversationId, id: pin.messageId, attachments: [] });
   return { ...pin, body: message.body, sticker: message.sticker, attachmentSummary: message.attachmentSummary, undecryptable: message.undecryptable, e2ee: undefined };
 }
 
@@ -352,6 +355,11 @@ export async function encryptUpload(blob, thumbnail) {
 export async function searchLocal(query, { conversationId } = {}) {
   if (!session.userId || !keystore.available()) return [];
   return keystore.searchTexts(session.userId, query, { conversationId }).catch(() => []);
+}
+
+/** Start reading this device's saved texts before the search runs (while the user types). */
+export function warmSearch() {
+  if (session.userId && keystore.available()) keystore.warmTexts(session.userId);
 }
 
 export const forgetText = (messageId) => keystore.deleteText(messageId).catch(() => {});
