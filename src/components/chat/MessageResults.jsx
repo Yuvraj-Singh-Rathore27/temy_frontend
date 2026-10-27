@@ -61,6 +61,12 @@ export function useSenderLabel() {
 export function useMessageSearch(query, conversationId) {
   const term = useDebouncedValue(query.trim(), 300);
   const [state, setState] = useState({ status: 'idle', messages: [], error: null, term: '' });
+  const typing = query.trim().length > 0;
+
+  // The on-device part reads every saved text; start that during the debounce.
+  useEffect(() => {
+    if (typing) messagesApi.warmSearch();
+  }, [typing]);
 
   useEffect(() => {
     if (term.length < 2) {

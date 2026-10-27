@@ -1,7 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { recordingsApi } from '../api/endpoints.js';
+import { useAuth } from '../auth/AuthContext.jsx';
 import { useChatActions } from '../chat/ChatContext.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import { showSystemNotification } from '../utils/notify.js';
+import { pickMimeType, startCallRecorder } from './callRecorder.js';
+import { createChunkUploader } from './chunkUploader.js';
 import { startTone } from './tones.js';
 
 /**
@@ -15,7 +19,12 @@ import { startTone } from './tones.js';
  *   phase: 'starting'|'ringing'|'incoming'|'connecting'|'active'|'ended',
  *   connectedAt, reconnecting, endedText,
  *   muted, cameraOff, speakerOff, sharing, network: 'good'|'poor'|'busy',
- *   remote: { audio, video, screen } }
+ *   remote: { audio, video, screen },
+ *   recording: null | { starting } | { id, startedAt }   (I am recording),
+ *   peerRecording: boolean   (the other person is recording) }
+ *
+ * Recording: this browser mixes both sides (see callRecorder.js) and uploads a chunk
+ * every few seconds; the other person is told by the server. Hanging up stops and saves it.
  *
  * Screen sharing sends the screen as the video track: in a video call it replaces
  * the camera (no renegotiation); in a voice call a video track is added once and
@@ -27,7 +36,7 @@ const CallActionsContext = createContext(null);
 
 const ENDED_SCREEN_MS = 1800;
 
-function mediaErrorMessage(error, type) {
+export function mediaErrorMessage(error, type) {
   const what = type === 'video' ? 'camera and microphone' : 'microphone';
   switch (error?.name) {
     case 'NotAllowedError':
@@ -117,6 +126,9 @@ async function listDevices(kind) {
 
 export function CallProvider({ children }) {
   const { subscribe, emitSocket } = useChatActions();
+  const { user } = useAuth();
+  const meRef = useRef(user?.id);
+  meRef.current = user?.id;
   const toast = useToast();
   const [call, setCallState] = useState(null);
   const [localStream, setLocalStream] = useState(null);
@@ -137,6 +149,9 @@ export function CallProvider({ children }) {
   const restartedRef = useRef(false);
   const screenRef = useRef(null); // the screen track while sharing
   const screenSenderRef = useRef(null); // voice calls: the sender added for the screen
+  const remoteRef = useRef(null); // the other person's stream, for the recorder
+  const recordingRef = useRef(null); // { id, recorder, uploader, startedAt } while I record
+  const stopRecordingRef = useRef(null);
 
   /** Update `call` and its ref together (patch: object or call => object; null clears). */
   const setCall = useCallback((patch) => {
@@ -158,6 +173,8 @@ export function CallProvider({ children }) {
   /** Close the connection and release camera/microphone. */
   const teardown = useCallback(() => {
     playTone(null);
+    // Before the tracks stop: the recorder flushes its last chunk and the recording is saved.
+    stopRecordingRef.current?.();
     if (pcRef.current) {
       pcRef.current.onconnectionstatechange = null;
       pcRef.current.close();
@@ -175,6 +192,7 @@ export function CallProvider({ children }) {
     pendingCandidates.current = [];
     restartedRef.current = false;
     setLocalStream(null);
+    remoteRef.current = null;
     setRemoteStream(null);
   }, [playTone]);
 
@@ -227,7 +245,9 @@ export function CallProvider({ children }) {
 
     pc.ontrack = (event) => {
       const [remote] = event.streams;
-      setRemoteStream(remote ?? new MediaStream([event.track]));
+      remoteRef.current = remote ?? new MediaStream([event.track]);
+      setRemoteStream(remoteRef.current);
+      recordingRef.current?.recorder.refresh(); // record a track that arrived later too
     };
     pc.onicecandidate = (event) => {
       if (event.candidate) signal({ type: 'candidate', candidate: event.candidate.toJSON() });
@@ -341,7 +361,7 @@ export function CallProvider({ children }) {
           finish(`${peer.name.split(' ')[0]} is on another call`);
           return;
         }
-        setCall({ id: started.id, phase: 'ringing' });
+        setCall({ id: started.id, phase: 'ringing', hostId: started.hostId });
         playTone('ringback');
       } catch (error) {
         finish(null);
@@ -518,6 +538,71 @@ export function CallProvider({ children }) {
     return () => clearInterval(timer);
   }, [active, setCall]);
 
+  /** Stop recording and save it in the chat (also when the call ends). */
+  const stopRecording = useCallback(
+    async (reason) => {
+      const active = recordingRef.current;
+      if (!active) return;
+      recordingRef.current = null;
+      setCall((current) => (current.recording ? { recording: null } : {}));
+      try {
+        await active.recorder.stop();
+        await active.uploader.drain();
+        await recordingsApi.finish(active.id, Date.now() - active.startedAt);
+        const failed = active.uploader.state.failed;
+        if (failed?.status === 413) toast.show('Recording stopped at the size limit. It is saved in the chat.');
+        else if (failed) toast.error('Part of the recording could not be uploaded. What arrived is saved in the chat.');
+        else toast.show(reason === 'ended' ? 'Call recording saved in the chat' : 'Recording saved in the chat');
+      } catch {
+        toast.error('The recording could not be saved');
+      }
+    },
+    [setCall, toast],
+  );
+  stopRecordingRef.current = () => stopRecording('ended');
+
+  /** Record this call (both voices, and both cameras in a video call). The other person is told. */
+  const startRecording = useCallback(async () => {
+    const current = callRef.current;
+    if (current?.phase !== 'active' || recordingRef.current || current.recording) return;
+    if (current.hostId !== meRef.current) {
+      toast.error('Only the host of the call can record it');
+      return;
+    }
+    const kind = current.type === 'video' ? 'video' : 'audio';
+    const mimeType = pickMimeType(kind);
+    if (!mimeType) {
+      toast.error("This browser can't record calls. Try Chrome, Edge or Firefox.");
+      return;
+    }
+    setCall({ recording: { starting: true } });
+    try {
+      const { recording } = await recordingsApi.start(current.id, { kind, mimeType });
+      if (callRef.current?.id !== current.id || callRef.current.phase !== 'active') {
+        recordingsApi.finish(recording.id, 0).catch(() => {}); // hung up meanwhile: nothing recorded
+        return;
+      }
+      const uploader = createChunkUploader((seq, blob) => recordingsApi.uploadChunk(recording.id, seq, blob));
+      const recorder = startCallRecorder({
+        kind,
+        mimeType,
+        getLocal: () => localRef.current,
+        getRemotes: () => [{ id: current.peer.id, name: current.peer.name, stream: remoteRef.current }],
+        onChunk: (blob) => {
+          uploader.push(blob);
+          // The upload gave up (too large, or the network is gone): stop rather than record into the void.
+          if (uploader.state.failed && recordingRef.current?.id === recording.id) stopRecording();
+        },
+      });
+      const startedAt = Date.now();
+      recordingRef.current = { id: recording.id, recorder, uploader, startedAt };
+      setCall({ recording: { id: recording.id, startedAt } });
+    } catch (error) {
+      setCall({ recording: null });
+      toast.error(error.message || 'Could not start recording');
+    }
+  }, [setCall, toast, stopRecording]);
+
   /** Speaker off silences the other person on this device (my microphone stays on). */
   const toggleSpeaker = useCallback(() => setCall((current) => ({ speakerOff: !current.speakerOff })), [setCall]);
 
@@ -543,6 +628,7 @@ export function CallProvider({ children }) {
           speakerOff: false,
           sharing: false,
           remote: { audio: true, video: incoming.type === 'video', screen: false },
+          hostId: incoming.hostId,
         });
         playTone('ring');
         if (document.hidden) {
@@ -557,13 +643,40 @@ export function CallProvider({ children }) {
       subscribe('call:accepted', ({ call: accepted }) => {
         if (callRef.current?.id !== accepted.id) return;
         playTone(null);
-        setCall({ phase: 'connecting' });
+        setCall({ phase: 'connecting', hostId: accepted.hostId });
         createPeer();
         makeOffer().catch(() => finish('Call failed'));
       }),
       // Answered or declined on another tab/device of mine.
       subscribe('call:handled', ({ callId }) => {
         if (callRef.current?.id === callId && callRef.current.phase === 'incoming') finish(null);
+      }),
+      // The host dropped: the next person who joined is host now (only the host can record).
+      subscribe('call:host', ({ callId, hostId, previousHostId }) => {
+        const current = callRef.current;
+        if (current?.id !== callId) return;
+        // A host who drops stops recording with the role.
+        setCall(previousHostId === current.peer.id ? { hostId, peerRecording: false } : { hostId });
+        if (previousHostId === meRef.current && recordingRef.current) {
+          stopRecordingRef.current?.(); // my connection dropped while recording: save what was uploaded
+        }
+        if (hostId === meRef.current) toast.show('You are now the host of this call and can record it');
+      }),
+      // Back after my connection dropped: if the host role moved on meanwhile, my recording ends here.
+      subscribe('call:resumed', ({ callId, hostId }) => {
+        if (callRef.current?.id !== callId || !hostId) return;
+        setCall({ hostId });
+        if (hostId !== meRef.current && recordingRef.current) {
+          stopRecordingRef.current?.();
+          toast.show('Your connection dropped, so the host role moved on. Your recording so far is saved.');
+        }
+      }),
+      // The other person started or stopped recording this call.
+      subscribe('call:recording', ({ callId, userId, recording }) => {
+        const current = callRef.current;
+        if (current?.id !== callId || current.peer.id !== userId) return;
+        setCall({ peerRecording: recording });
+        if (recording) toast.show(`${current.peer.name.split(' ')[0]} started recording this call`);
       }),
       subscribe('call:signal', (payload) => {
         signalQueue.current = signalQueue.current.then(() => handleSignal(payload)).catch(() => {});
@@ -583,7 +696,7 @@ export function CallProvider({ children }) {
       }),
     ];
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
-  }, [subscribe, teardown, setCall, playTone, createPeer, makeOffer, finish, handleSignal]);
+  }, [subscribe, teardown, setCall, playTone, createPeer, makeOffer, finish, handleSignal, toast]);
 
   // Closing or reloading the tab hangs up; leaving the chat page (logout) too.
   useEffect(() => {
@@ -601,12 +714,35 @@ export function CallProvider({ children }) {
   }, [emitSocket, teardown]);
 
   const state = useMemo(
-    () => ({ call, localStream, remoteStream, screenStream, canSwitchCamera: cameras.length > 1, outputs, outputId }),
-    [call, localStream, remoteStream, screenStream, cameras.length, outputs, outputId],
+    () => ({
+      call,
+      localStream,
+      remoteStream,
+      screenStream,
+      canSwitchCamera: cameras.length > 1,
+      outputs,
+      outputId,
+      isHost: Boolean(call && call.hostId === user?.id),
+    }),
+    [call, localStream, remoteStream, screenStream, cameras.length, outputs, outputId, user?.id],
   );
   const actions = useMemo(
-    () => ({ startCall, acceptCall, declineCall, hangUp, toggleMute, toggleCamera, switchCamera, toggleSpeaker, startScreenShare, stopScreenShare, setOutputId }),
-    [startCall, acceptCall, declineCall, hangUp, toggleMute, toggleCamera, switchCamera, toggleSpeaker, startScreenShare, stopScreenShare],
+    () => ({
+      startCall,
+      acceptCall,
+      declineCall,
+      hangUp,
+      toggleMute,
+      toggleCamera,
+      switchCamera,
+      toggleSpeaker,
+      startScreenShare,
+      stopScreenShare,
+      setOutputId,
+      startRecording,
+      stopRecording: () => stopRecording(),
+    }),
+    [startCall, acceptCall, declineCall, hangUp, toggleMute, toggleCamera, switchCamera, toggleSpeaker, startScreenShare, stopScreenShare, startRecording, stopRecording],
   );
 
   return (

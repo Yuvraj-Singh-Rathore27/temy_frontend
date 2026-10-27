@@ -3,6 +3,8 @@ import { useMatch } from 'react-router-dom';
 import { CallProvider } from '../calls/CallContext.jsx';
 import { ChatProvider } from '../chat/ChatContext.jsx';
 import { CallOverlay } from '../components/calls/CallOverlay.jsx';
+import { GroupCallProvider } from '../calls/GroupCallContext.jsx';
+import { GroupCallOverlay } from '../components/calls/GroupCallOverlay.jsx';
 import { ChatWindow } from '../components/chat/ChatWindow.jsx';
 import { LiveShareBanner } from '../components/location/LiveShareBanner.jsx';
 import { Sidebar } from '../components/chat/Sidebar.jsx';
@@ -20,8 +22,11 @@ export default function ChatPage() {
     // Re-mount everything (socket + cache) when a different user signs in.
     <ChatProvider key={user.id}>
       <CallProvider>
-        <ChatLayout />
-        <CallOverlay />
+        <GroupCallProvider>
+          <ChatLayout />
+          <CallOverlay />
+          <GroupCallOverlay />
+        </GroupCallProvider>
       </CallProvider>
     </ChatProvider>
   );

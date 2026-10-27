@@ -50,6 +50,7 @@ const ChatActionsContext = createContext(null);
 const PAGE_SIZE = 30;
 const DEFAULT_SETTINGS = { notificationsEnabled: true, messagePreview: true, soundEnabled: true, push: { available: false } };
 const TYPING_SAFETY_MS = 8000; // drop a "typing…" we never got a stop for
+const GROUP_RECEIPT_DELAY_MS = 1000; // groups send one delivered/read receipt per second at most
 
 /** Is this conversation on screen in a focused, visible tab? */
 function isViewing(activeId, conversationId) {
@@ -922,7 +923,7 @@ export function ChatProvider({ children }) {
   const togglePin = useCallback(async (message) => {
     const pinned = stateRef.current.pins[message.conversationId]?.some((p) => p.messageId === message.id);
     const { conversationId, pins } = pinned ? await messagesApi.unpin(message.id) : await messagesApi.pin(message.id);
-    dispatch({ type: 'pins/loaded', conversationId, pins });
+    dispatch({ type: 'pins/loaded', conversationId, pins: await Promise.all(pins.map((pin) => decryptPin(pin, conversationId))) });
   }, []);
 
   const forwardMessage = useCallback(
@@ -1004,6 +1005,25 @@ export function ChatProvider({ children }) {
     socketRef.current = socket;
     let hadSession = false;
     let closed = false;
+
+    // Group receipts waiting to be sent: conversationId -> { readId, deliveredId, timer }.
+    // "read" covers only messages that arrived while the chat was open; later ones are "delivered".
+    const groupReceipts = new Map();
+    const queueGroupReceipt = (conversationId, messageId, read) => {
+      const pending = groupReceipts.get(conversationId) ?? { readId: 0, deliveredId: 0, timer: null };
+      if (read) pending.readId = Math.max(pending.readId, messageId);
+      pending.deliveredId = Math.max(pending.deliveredId, messageId);
+      if (!pending.timer) {
+        pending.timer = setTimeout(() => {
+          groupReceipts.delete(conversationId);
+          if (pending.readId) emitWithAck(socket, 'message:read', { conversationId, messageId: pending.readId }).catch(() => {});
+          if (pending.deliveredId > pending.readId) {
+            emitWithAck(socket, 'message:delivered', { conversationId, messageId: pending.deliveredId }).catch(() => {});
+          }
+        }, GROUP_RECEIPT_DELAY_MS);
+      }
+      groupReceipts.set(conversationId, pending);
+    };
 
     const clearTypingTimer = (key) => {
       clearTimeout(typingTimers.current.get(key));
@@ -1089,6 +1109,12 @@ export function ChatProvider({ children }) {
       dispatch({ type: 'message/received', message, countUnread: fromPeer && !viewing && !alreadyCounted && counts });
       if (fromPeer && !message.event) notifyIncoming.current(message); // system messages stay quiet
       if (!fromPeer) return;
+      // Groups: at most one receipt per chat per second (for the newest message) instead of one
+      // per message, which in a big, busy group would flood the server and everyone's phone.
+      if (isGroup(stateRef.current.conversations[message.conversationId])) {
+        queueGroupReceipt(message.conversationId, message.id, viewing);
+        return;
+      }
       if (viewing) {
         emitWithAck(socket, 'message:read', { conversationId: message.conversationId, messageId: message.id }).catch(() => {});
       } else {
@@ -1106,7 +1132,7 @@ export function ChatProvider({ children }) {
     socket.on('message:reactions', (result) => dispatch({ type: 'message/reactions', ...result }));
     socket.on('message:starred', (result) => dispatch({ type: 'message/starred', ...result }));
     socket.on('conversation:pins', async ({ conversationId, pins }) => {
-      dispatch({ type: 'pins/loaded', conversationId, pins: await Promise.all(pins.map(decryptPin)) });
+      dispatch({ type: 'pins/loaded', conversationId, pins: await Promise.all(pins.map((pin) => decryptPin(pin, conversationId))) });
     });
     socket.on('settings:updated', (settings) => dispatch({ type: 'settings/loaded', settings }));
     socket.on('conversation:wallpaper', (result) => dispatch({ type: 'conversation/wallpaper', ...result }));
@@ -1194,6 +1220,7 @@ export function ChatProvider({ children }) {
       const pendingThreads = Object.entries(s.threads).filter(([, t]) => t.items.some(notReady));
       if (pendingThreads.length || Object.values(s.conversations).some((c) => notReady(c.lastMessage))) loadConversations();
       for (const [conversationId] of pendingThreads) loadThread(Number(conversationId));
+      for (const [conversationId, pins] of Object.entries(s.pins)) if (pins.some(notReady)) loadPins(Number(conversationId));
     });
     Promise.race([setup, new Promise((resolve) => setTimeout(resolve, 6000))]).finally(() => {
       if (closed) return;
@@ -1216,10 +1243,12 @@ export function ChatProvider({ children }) {
       endE2eeSession();
       for (const timer of timers.values()) clearTimeout(timer);
       timers.clear();
+      for (const { timer } of groupReceipts.values()) clearTimeout(timer);
+      groupReceipts.clear();
       socketRef.current = null;
     };
     // `me` identifies the session; the callbacks below are stable.
-  }, [me, endSession, updateUser, loadThread, loadConversations, loadContacts, catchUpThreads, flushPending, fetchConversation, markRead, stopTracking, resumeLiveShares, loadSettings, loadWallpapers, loadGroupInfo, navigate, toast]);
+  }, [me, endSession, updateUser, loadThread, loadPins, loadConversations, loadContacts, catchUpThreads, flushPending, fetchConversation, markRead, stopTracking, resumeLiveShares, loadSettings, loadWallpapers, loadGroupInfo, navigate, toast]);
 
   // Every callback above is stable, so this object is created once per session.
   const actions = useMemo(

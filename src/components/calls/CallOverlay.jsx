@@ -1,6 +1,24 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { Cpu, Headphones, Mic, MicOff, Phone, PhoneOff, ScreenShare, ScreenShareOff, SwitchCamera, Video, VideoOff, Volume2, VolumeX, WifiOff } from 'lucide-react';
+import {
+  Circle,
+  Cpu,
+  Headphones,
+  Mic,
+  MicOff,
+  Phone,
+  PhoneOff,
+  ScreenShare,
+  ScreenShareOff,
+  Square,
+  SwitchCamera,
+  Video,
+  VideoOff,
+  Volume2,
+  VolumeX,
+  WifiOff,
+} from 'lucide-react';
 import { canShareScreen, useCallActions, useCallState } from '../../calls/CallContext.jsx';
+import { canRecordCalls } from '../../calls/callRecorder.js';
 import { formatDuration } from '../../utils/media.js';
 import { cn } from '../../utils/misc.js';
 import { Avatar } from '../ui/Avatar.jsx';
@@ -48,8 +66,11 @@ function IncomingCall({ call }) {
 }
 
 function CallScreen() {
-  const { call, localStream, remoteStream, screenStream, canSwitchCamera, outputs, outputId } = useCallState();
-  const { hangUp, toggleMute, toggleCamera, switchCamera, toggleSpeaker, startScreenShare, stopScreenShare, setOutputId } = useCallActions();
+  const { call, localStream, remoteStream, screenStream, canSwitchCamera, outputs, outputId, isHost } = useCallState();
+  const { hangUp, toggleMute, toggleCamera, switchCamera, toggleSpeaker, startScreenShare, stopScreenShare, setOutputId, startRecording, stopRecording } =
+    useCallActions();
+  const recording = call.recording;
+  const recordingNow = Boolean(recording?.startedAt) && call.phase !== 'ended';
   const video = call.type === 'video';
   const active = call.phase === 'active';
   const remoteScreen = active && remoteStream && call.remote.screen;
@@ -98,8 +119,13 @@ function CallScreen() {
         </div>
       )}
 
-      {active && (remoteScreen || !call.remote.audio || call.network === 'poor' || call.network === 'busy') && (
+      {active && (call.peerRecording || remoteScreen || !call.remote.audio || call.network === 'poor' || call.network === 'busy') && (
         <div className="pointer-events-none absolute top-20 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-xs whitespace-nowrap" aria-live="polite">
+          {call.peerRecording && (
+            <p className="flex items-center gap-1.5 rounded-full bg-red-600/90 px-3 py-1 font-medium">
+              <Circle className="size-3 animate-pulse fill-current" aria-hidden /> {firstName} is recording this call
+            </p>
+          )}
           {remoteScreen && (
             <p className="flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1">
               <ScreenShare className="size-3.5" aria-hidden /> {firstName} is sharing their screen
@@ -141,6 +167,18 @@ function CallScreen() {
 
       {!ended && (
         <div className="relative mt-auto flex flex-wrap items-center justify-center gap-3 bg-gradient-to-t from-black/70 to-transparent px-4 pt-10 pb-[max(2rem,env(safe-area-inset-bottom))] sm:gap-5">
+          {recordingNow && (
+            <div className="flex basis-full justify-center">
+              <p className="flex items-center gap-2 rounded-full bg-red-600 py-1 pr-1 pl-3 text-sm shadow-pop" role="status">
+                <Circle className="size-3 animate-pulse fill-current" aria-hidden /> Recording
+                <RecordingTimer since={recording.startedAt} />
+                <span className="hidden text-white/80 sm:inline">· {firstName} can see this</span>
+                <button type="button" onClick={stopRecording} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-neutral-900 hover:bg-white/90">
+                  Stop
+                </button>
+              </p>
+            </div>
+          )}
           {sharing && (
             <div className="flex basis-full justify-center">
               <p className="flex items-center gap-2 rounded-full bg-brand-600 py-1 pr-1 pl-3 text-sm shadow-pop" role="status">
@@ -174,6 +212,16 @@ function CallScreen() {
               icon={call.sharing ? ScreenShareOff : ScreenShare}
               onClick={call.sharing ? stopScreenShare : startScreenShare}
               active={call.sharing}
+            />
+          )}
+          {/* Only the host records; the button moves to the next person if the host drops. */}
+          {canRecordCalls && active && (isHost || recordingNow) && (
+            <RoundButton
+              label={recordingNow ? 'Stop recording' : recording?.starting ? 'Starting recording…' : 'Record call'}
+              icon={recordingNow ? Square : Circle}
+              onClick={recordingNow ? stopRecording : startRecording}
+              active={recordingNow}
+              className={recordingNow ? 'bg-red-600 text-white hover:bg-red-700' : undefined}
             />
           )}
           <RoundButton label={call.muted ? 'Unmute' : 'Mute'} icon={call.muted ? MicOff : Mic} onClick={toggleMute} active={call.muted} />
@@ -222,7 +270,16 @@ function CallTimer({ since }) {
   return <p className="text-sm text-white/80 tabular-nums">{formatDuration(Math.max(0, now - since))}</p>;
 }
 
-const RoundButton = memo(function RoundButton({ label, icon: Icon, onClick, active = false, className, withLabel = false, autoFocus }) {
+export function RecordingTimer({ since }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return <span className="tabular-nums">{formatDuration(Math.max(0, now - since))}</span>;
+}
+
+export const RoundButton = memo(function RoundButton({ label, icon: Icon, onClick, active = false, className, withLabel = false, autoFocus }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <button
@@ -244,7 +301,7 @@ const RoundButton = memo(function RoundButton({ label, icon: Icon, onClick, acti
   );
 });
 
-function VideoView({ stream, muted = true, className }) {
+export function VideoView({ stream, muted = true, className }) {
   const ref = useRef(null);
   useEffect(() => {
     const element = ref.current;
