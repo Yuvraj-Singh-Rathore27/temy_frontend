@@ -234,7 +234,7 @@ function Centered({ children }) {
 
 const STICKER_SECTIONS = [
   { id: 'mine', label: 'My stickers' },
-  { id: 'blob', label: 'Vestige Chat' },
+  { id: 'blob', label: 'VAKA' },
   { id: 'emoji', label: 'Emoji' },
 ];
 let lastStickerSection = 'blob';

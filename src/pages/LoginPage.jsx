@@ -82,7 +82,7 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </div>
-        <Button type="submit" size="lg" fullWidth loading={form.submitting}>
+        <Button type="submit" size="lg" fullWidth loading={form.submitting} className="vestige-btn mt-2 rounded-xl font-semibold">
           Sign in
         </Button>
       </form>

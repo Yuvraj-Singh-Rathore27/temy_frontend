@@ -239,3 +239,308 @@
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 }
+
+/* ================================================================
+ * Vestige auth screens (login / register / reset).
+ * Scoped brand: Vestige wellness green, independent of the chat accent.
+ * ================================================================ */
+.vestige-theme {
+  --accent-300: #86efac;
+  --accent-400: #4ade80;
+  --accent-500: #16a34a;
+  --accent-600: #0f8a3e;
+  --color-brand-50: color-mix(in oklab, var(--accent-500) 9%, white);
+  --color-brand-100: color-mix(in oklab, var(--accent-500) 17%, white);
+  --color-brand-200: color-mix(in oklab, var(--accent-500) 30%, white);
+  --color-brand-300: var(--accent-300);
+  --color-brand-400: var(--accent-400);
+  --color-brand-500: var(--accent-500);
+  --color-brand-600: var(--accent-600);
+  --color-brand-700: color-mix(in oklab, var(--accent-600) 82%, black);
+  --color-brand-800: color-mix(in oklab, var(--accent-600) 66%, black);
+  --color-brand-strong: color-mix(in oklab, var(--accent-600) 82%, black);
+  --shadow-focus: 0 0 0 3px color-mix(in oklab, var(--accent-500) 28%, transparent);
+  --vestige-gold: #f5c24c;
+}
+:root[data-theme='dark'] .vestige-theme {
+  --color-brand-50: color-mix(in oklab, var(--accent-500) 16%, #121826);
+  --color-brand-100: color-mix(in oklab, var(--accent-500) 26%, #121826);
+  --color-brand-200: color-mix(in oklab, var(--accent-500) 40%, #121826);
+  --color-brand-600: var(--accent-500);
+  --color-brand-700: var(--accent-300);
+  --color-brand-800: color-mix(in oklab, var(--accent-300) 55%, white);
+  --color-brand-strong: color-mix(in oklab, var(--accent-600) 80%, black);
+}
+
+/* Hero panel background: deep green gradient with a soft dotted texture. */
+.vestige-hero {
+  background:
+    radial-gradient(120% 80% at 0% 0%, #1fb35a 0%, transparent 55%),
+    radial-gradient(90% 70% at 100% 100%, #0b5d2c 0%, transparent 60%),
+    linear-gradient(150deg, #0f8a3e 0%, #0a6b30 55%, #064221 100%);
+}
+.vestige-dots {
+  background-image: radial-gradient(rgb(255 255 255 / 0.14) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+/* Soft page background behind the form card. */
+.vestige-canvas {
+  background:
+    radial-gradient(60% 50% at 100% 0%, color-mix(in oklab, var(--accent-500) 12%, transparent), transparent 70%),
+    radial-gradient(50% 40% at 0% 100%, color-mix(in oklab, var(--vestige-gold) 14%, transparent), transparent 70%),
+    var(--color-canvas);
+}
+
+/* Glassy card. */
+.vestige-card {
+  background: color-mix(in oklab, var(--color-surface) 95%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.04),
+    0 24px 48px -24px color-mix(in oklab, var(--accent-600) 35%, transparent);
+}
+
+/* Gradient top border on the card. */
+.vestige-card-bar {
+  background: linear-gradient(90deg, var(--accent-500), var(--vestige-gold), var(--accent-500));
+  background-size: 200% 100%;
+  animation: vestige-shimmer-bg 6s linear infinite;
+}
+
+/* Primary button: green gradient + sweeping shine on hover. */
+.vestige-btn {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(135deg, var(--accent-500), var(--accent-600) 60%, color-mix(in oklab, var(--accent-600) 75%, black));
+  box-shadow: 0 10px 24px -10px color-mix(in oklab, var(--accent-600) 70%, transparent);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+.vestige-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -10px color-mix(in oklab, var(--accent-600) 80%, transparent);
+  filter: saturate(1.1);
+}
+.vestige-btn:not(:disabled):active { transform: translateY(0); }
+.vestige-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.vestige-btn:not(:disabled):hover::after { animation: vestige-sweep 900ms ease; }
+
+/* Entrance + ambient animations. */
+.v-fade-up { opacity: 0; animation: vestige-fade-up 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.v-fade-in { opacity: 0; animation: vestige-fade-in 900ms ease forwards; }
+.v-pop { opacity: 0; animation: vestige-pop 800ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.v-float { animation: vestige-float 7s ease-in-out infinite; }
+.v-float-slow { animation: vestige-float 11s ease-in-out infinite; }
+.v-drift { animation: vestige-drift 18s ease-in-out infinite; }
+.v-spin-slow { animation: vestige-spin 24s linear infinite; }
+.v-ring { animation: vestige-ring 2.8s ease-out infinite; }
+.v-leaf { animation: vestige-leaf 14s ease-in-out infinite; }
+.v-text-shimmer {
+  background: linear-gradient(90deg, #fff 0%, #fff 40%, var(--vestige-gold) 50%, #fff 60%, #fff 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: vestige-shimmer-text 5s ease-in-out infinite;
+}
+
+@keyframes vestige-fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes vestige-fade-in { to { opacity: 1; } }
+@keyframes vestige-pop { 0% { opacity: 0; transform: scale(0.7) rotate(-8deg); } 100% { opacity: 1; transform: none; } }
+@keyframes vestige-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes vestige-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.08); }
+  66% { transform: translate(-20px, 25px) scale(0.95); }
+}
+@keyframes vestige-spin { to { transform: rotate(360deg); } }
+@keyframes vestige-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+@keyframes vestige-leaf {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-18px) rotate(10deg); }
+  50% { transform: translateY(-6px) rotate(-6deg); }
+  75% { transform: translateY(-22px) rotate(6deg); }
+}
+@keyframes vestige-sweep { to { transform: translateX(120%); } }
+@keyframes vestige-shimmer-bg { to { background-position: -200% 0; } }
+@keyframes vestige-shimmer-text { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .v-fade-up, .v-fade-in, .v-pop { animation: none; opacity: 1; }
+  .v-float, .v-float-slow, .v-drift, .v-spin-slow, .v-ring, .v-leaf,
+  .v-text-shimmer, .vestige-card-bar, .vestige-btn::after { animation: none !important; }
+}
+
+/* ---- Vestige auth: extra motion (v2) ---- */
+@property --v-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Rotating glowing border around the form card. */
+.vestige-glow-border {
+  position: relative;
+  border-radius: 1.6rem;
+  padding: 1.5px;
+  background: conic-gradient(from var(--v-angle), transparent 0deg, var(--accent-400) 60deg, var(--vestige-gold) 120deg, transparent 180deg, transparent 360deg);
+  animation: vestige-angle 5s linear infinite;
+}
+.vestige-glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: inherit;
+  background: inherit;
+  filter: blur(22px);
+  opacity: 0.35;
+  z-index: -1;
+}
+@keyframes vestige-angle { to { --v-angle: 360deg; } }
+
+/* Moving aurora behind the form. */
+.vestige-aurora {
+  background:
+    radial-gradient(40% 35% at 20% 30%, color-mix(in oklab, var(--accent-400) 22%, transparent), transparent 70%),
+    radial-gradient(35% 30% at 80% 70%, color-mix(in oklab, var(--vestige-gold) 22%, transparent), transparent 70%),
+    radial-gradient(30% 30% at 60% 20%, color-mix(in oklab, var(--accent-500) 14%, transparent), transparent 70%);
+  filter: blur(10px);
+  animation: vestige-aurora 16s ease-in-out infinite alternate;
+}
+@keyframes vestige-aurora {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate(-4%, 3%) rotate(8deg) scale(1.1); }
+  100% { transform: translate(3%, -3%) rotate(-6deg) scale(1.05); }
+}
+
+/* Rising gold particles in the hero panel. */
+.v-particle {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fde68a, rgb(253 230 138 / 0));
+  opacity: 0;
+  animation: vestige-rise linear infinite;
+}
+@keyframes vestige-rise {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.9; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-105vh) translateX(30px); opacity: 0; }
+}
+
+/* Logo shine sweep. */
+.v-logo-shine { position: relative; overflow: hidden; }
+.v-logo-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.85) 50%, transparent 65%);
+  transform: translateX(-130%);
+  animation: vestige-logo-shine 4.5s ease-in-out 1.2s infinite;
+}
+@keyframes vestige-logo-shine { 0% { transform: translateX(-130%); } 30%, 100% { transform: translateX(130%); } }
+
+/* Word-by-word headline reveal. */
+.v-word {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(0.4em);
+  animation: vestige-word 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes vestige-word { to { opacity: 1; filter: blur(0); transform: none; } }
+
+/* Mini chat preview in the hero. */
+.v-bubble {
+  opacity: 0;
+  transform: translateY(10px) scale(0.92);
+  animation: vestige-bubble 9s ease-in-out infinite;
+}
+@keyframes vestige-bubble {
+  0% { opacity: 0; transform: translateY(10px) scale(0.92); }
+  6%, 88% { opacity: 1; transform: none; }
+  96%, 100% { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+.v-typing-dot { animation: typing-dot 1.2s infinite ease-in-out; }
+
+/* Inputs inside auth screens: lift + soft glow on focus. */
+.vestige-theme input {
+  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+}
+/* Keep the leading icon above the input and tint it green while focused. */
+.vestige-theme div:has(> input) > svg { z-index: 1; transition: color 200ms ease; }
+.vestige-theme div:has(> input:focus) > svg { color: var(--color-brand-600); }
+.vestige-theme input:focus {
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent-500) 18%, transparent), 0 10px 24px -14px color-mix(in oklab, var(--accent-600) 60%, transparent);
+}
+.vestige-theme label { transition: color 200ms ease; }
+.vestige-theme div:has(> div > input:focus) > label { color: var(--color-brand-600); }
+
+/* Card subtle tilt on hover (desktop). */
+@media (hover: hover) {
+  .v-tilt { transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1); }
+  .v-tilt:hover { transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vestige-glow-border, .vestige-aurora, .v-particle, .v-logo-shine::after, .v-typing-dot { animation: none !important; }
+  .v-particle { display: none; }
+  .v-word, .v-bubble { animation: none; opacity: 1; filter: none; transform: none; }
+}
+
+/* Namaste greeting: a gentle bow, repeated now and then. */
+.v-namaste { animation: vestige-namaste 4s ease-in-out 0.8s infinite; transform-origin: 50% 80%; }
+@keyframes vestige-namaste {
+  0%, 60%, 100% { transform: rotate(0) translateY(0); }
+  10% { transform: rotate(-10deg) translateY(1px); }
+  20% { transform: rotate(0) translateY(2px) scale(0.95); }
+  30% { transform: rotate(0) translateY(0) scale(1.08); }
+  40% { transform: rotate(0) translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .v-namaste { animation: none; } }
+
+/* ---- Vestige watermarks ---- */
+/* Repeating diagonal text behind the form. */
+.vestige-watermark-text {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='460' height='220'%3E%3Ctext x='0' y='120' transform='rotate(-24 230 110)' font-family='Inter,Segoe UI,sans-serif' font-size='17' font-weight='700' letter-spacing='3' fill='%230f8a3e' fill-opacity='0.07'%3EVAKA %C2%B7 GOOD MORNING VESTIGIAN%3C/text%3E%3C/svg%3E");
+  background-size: 460px 220px;
+  mask-image: radial-gradient(ellipse at center, black 35%, transparent 85%);
+  animation: vestige-wm-pan 60s linear infinite;
+}
+@keyframes vestige-wm-pan { to { background-position: 460px 220px; } }
+
+/* Large faded logo behind the form (white JPG background disappears via blend). */
+.vestige-watermark-logo {
+  opacity: 0.1;
+  mix-blend-mode: multiply;
+  filter: grayscale(0.2);
+}
+:root[data-theme='dark'] .vestige-watermark-logo {
+  opacity: 0.12;
+  mix-blend-mode: screen;
+  filter: grayscale(1) invert(1);
+}
+
+/* Huge outlined brand word in the hero panel. */
+.vestige-watermark-word {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgb(255 255 255 / 0.1);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) { .vestige-watermark-text { animation: none; } }

@@ -469,7 +469,7 @@ export function CallProvider({ children }) {
     const pc = pcRef.current;
     if (!pc || callRef.current?.phase !== 'active' || screenRef.current) return;
     if (!canShareScreen) {
-      toast.error("This browser can't share the screen. Use Vestige Chat on a computer (Chrome, Edge, Firefox or Safari).");
+      toast.error("This browser can't share the screen. Use VAKA on a computer (Chrome, Edge, Firefox or Safari).");
       return;
     }
     let stream;
