@@ -241,306 +241,367 @@
 }
 
 /* ================================================================
- * Vestige auth screens (login / register / reset).
- * Scoped brand: Vestige wellness green, independent of the chat accent.
+ * VAKA sign-in screens (login, register, forgot/reset, verify).
+ * Always dark and always Vestige green, whatever the app's theme or accent.
+ * --u is one pixel of the 1451x739 design, so the layout scales as a whole.
  * ================================================================ */
 .vestige-theme {
-  --accent-300: #86efac;
-  --accent-400: #4ade80;
-  --accent-500: #16a34a;
-  --accent-600: #0f8a3e;
-  --color-brand-50: color-mix(in oklab, var(--accent-500) 9%, white);
-  --color-brand-100: color-mix(in oklab, var(--accent-500) 17%, white);
-  --color-brand-200: color-mix(in oklab, var(--accent-500) 30%, white);
-  --color-brand-300: var(--accent-300);
-  --color-brand-400: var(--accent-400);
-  --color-brand-500: var(--accent-500);
-  --color-brand-600: var(--accent-600);
-  --color-brand-700: color-mix(in oklab, var(--accent-600) 82%, black);
-  --color-brand-800: color-mix(in oklab, var(--accent-600) 66%, black);
-  --color-brand-strong: color-mix(in oklab, var(--accent-600) 82%, black);
-  --shadow-focus: 0 0 0 3px color-mix(in oklab, var(--accent-500) 28%, transparent);
-  --vestige-gold: #f5c24c;
-}
-:root[data-theme='dark'] .vestige-theme {
-  --color-brand-50: color-mix(in oklab, var(--accent-500) 16%, #121826);
-  --color-brand-100: color-mix(in oklab, var(--accent-500) 26%, #121826);
-  --color-brand-200: color-mix(in oklab, var(--accent-500) 40%, #121826);
-  --color-brand-600: var(--accent-500);
-  --color-brand-700: var(--accent-300);
-  --color-brand-800: color-mix(in oklab, var(--accent-300) 55%, white);
-  --color-brand-strong: color-mix(in oklab, var(--accent-600) 80%, black);
+  --u: min(1.5px, max(0.72px, min(100vw / 1451, 100vh / 739)));
+
+  color-scheme: dark;
+  font-family: 'Poppins', var(--font-sans);
+
+  --color-canvas: #012a36;
+  --color-surface: #0a2a39;
+  --color-surface-muted: #0d3240;
+  --color-surface-sunken: #103a49;
+  --color-line: rgb(255 255 255 / 0.2);
+  --color-line-strong: rgb(255 255 255 / 0.34);
+  --color-ink: #ffffff;
+  --color-ink-soft: #f1f6f5;
+  --color-ink-muted: #c4d4d3;
+  --color-ink-faint: #9db2b4;
+
+  --color-brand-50: rgb(165 240 60 / 0.1);
+  --color-brand-100: rgb(165 240 60 / 0.18);
+  --color-brand-200: rgb(165 240 60 / 0.3);
+  --color-brand-300: #c8f53a;
+  --color-brand-400: #a8ef2c;
+  --color-brand-500: #7fe02a;
+  --color-brand-600: #9fec30;
+  --color-brand-700: #d2f209;
+  --color-brand-800: #e6f73d;
+  --color-brand-strong: #0f8a3e;
+
+  --color-danger: #ff3b3b;
+  --color-danger-soft: #3a1619;
+  --shadow-focus: 0 0 0 3px rgb(168 239 44 / 0.28);
 }
 
-/* Hero panel background: deep green gradient with a soft dotted texture. */
-.vestige-hero {
-  background:
-    radial-gradient(120% 80% at 0% 0%, #1fb35a 0%, transparent 55%),
-    radial-gradient(90% 70% at 100% 100%, #0b5d2c 0%, transparent 60%),
-    linear-gradient(150deg, #0f8a3e 0%, #0a6b30 55%, #064221 100%);
-}
-.vestige-dots {
-  background-image: radial-gradient(rgb(255 255 255 / 0.14) 1px, transparent 1.4px);
-  background-size: 22px 22px;
-  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
-}
-
-/* Soft page background behind the form card. */
-.vestige-canvas {
-  background:
-    radial-gradient(60% 50% at 100% 0%, color-mix(in oklab, var(--accent-500) 12%, transparent), transparent 70%),
-    radial-gradient(50% 40% at 0% 100%, color-mix(in oklab, var(--vestige-gold) 14%, transparent), transparent 70%),
-    var(--color-canvas);
-}
-
-/* Glassy card. */
-.vestige-card {
-  background: color-mix(in oklab, var(--color-surface) 95%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow:
-    0 1px 2px rgb(15 23 42 / 0.04),
-    0 24px 48px -24px color-mix(in oklab, var(--accent-600) 35%, transparent);
-}
-
-/* Gradient top border on the card. */
-.vestige-card-bar {
-  background: linear-gradient(90deg, var(--accent-500), var(--vestige-gold), var(--accent-500));
-  background-size: 200% 100%;
-  animation: vestige-shimmer-bg 6s linear infinite;
-}
-
-/* Primary button: green gradient + sweeping shine on hover. */
-.vestige-btn {
+.vaka-auth {
   position: relative;
+  min-height: 100dvh;
   overflow: hidden;
-  background-image: linear-gradient(135deg, var(--accent-500), var(--accent-600) 60%, color-mix(in oklab, var(--accent-600) 75%, black));
-  box-shadow: 0 10px 24px -10px color-mix(in oklab, var(--accent-600) 70%, transparent);
-  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  color: var(--color-ink);
+  background:
+    radial-gradient(27% 46% at 31% 24%, #06a84c 0%, rgb(6 168 76 / 0.55) 45%, rgb(6 168 76 / 0) 100%),
+    radial-gradient(30% 55% at 0% 58%, #015f32 0%, rgb(1 95 50 / 0) 100%),
+    radial-gradient(40% 24% at 40% 100%, #01502c 0%, rgb(1 80 44 / 0) 100%),
+    linear-gradient(90deg, #013a3c 0%, #01404a 52%, #012337 100%);
 }
-.vestige-btn:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 28px -10px color-mix(in oklab, var(--accent-600) 80%, transparent);
-  filter: saturate(1.1);
-}
-.vestige-btn:not(:disabled):active { transform: translateY(0); }
-.vestige-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
-  transform: translateX(-120%);
-  pointer-events: none;
-}
-.vestige-btn:not(:disabled):hover::after { animation: vestige-sweep 900ms ease; }
 
-/* Entrance + ambient animations. */
-.v-fade-up { opacity: 0; animation: vestige-fade-up 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.v-fade-in { opacity: 0; animation: vestige-fade-in 900ms ease forwards; }
-.v-pop { opacity: 0; animation: vestige-pop 800ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.v-float { animation: vestige-float 7s ease-in-out infinite; }
-.v-float-slow { animation: vestige-float 11s ease-in-out infinite; }
-.v-drift { animation: vestige-drift 18s ease-in-out infinite; }
-.v-spin-slow { animation: vestige-spin 24s linear infinite; }
-.v-ring { animation: vestige-ring 2.8s ease-out infinite; }
-.v-leaf { animation: vestige-leaf 14s ease-in-out infinite; }
-.v-text-shimmer {
-  background: linear-gradient(90deg, #fff 0%, #fff 40%, var(--vestige-gold) 50%, #fff 60%, #fff 100%);
-  background-size: 250% 100%;
+/* ---- Background ---- */
+.vaka-bg { position: absolute; inset: 0; pointer-events: none; }
+.vaka-waves { position: absolute; inset: 0; width: 100%; height: 100%; }
+.vaka-wave { animation: vaka-wave 12s ease-in-out infinite alternate; }
+.vaka-wave-slow { animation-duration: 17s; animation-direction: alternate-reverse; }
+.vaka-dots {
+  position: absolute;
+  background-image: radial-gradient(rgb(127 233 160 / 0.75) 0.8px, transparent 1.2px);
+  background-size: 6px 6px;
+}
+.vaka-dots-tl {
+  top: 0; left: 0; width: 13%; height: 36%;
+  mask-image: radial-gradient(90% 90% at 0% 25%, black, transparent);
+}
+.vaka-dots-br {
+  right: 0; bottom: 8%; width: 9%; height: 26%;
+  mask-image: radial-gradient(100% 90% at 100% 60%, black, transparent);
+}
+
+/* ---- Layout ---- */
+.vaka-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 1.75rem;
+  padding: 2rem 1rem;
+}
+.vaka-brand { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.vaka-form { width: 100%; max-width: 32rem; }
+
+/* ---- Logo ---- */
+.vaka-logo { position: relative; display: flex; justify-content: center; }
+.vaka-tile {
+  position: relative;
+  width: calc(var(--u) * 285);
+  height: calc(var(--u) * 256);
+  overflow: hidden;
+  border-radius: calc(var(--u) * 70);
+  border: calc(var(--u) * 6) solid #47e23f;
+  background: #fff;
+  box-shadow: 0 0 calc(var(--u) * 34) rgb(71 226 63 / 0.75), 0 0 calc(var(--u) * 90) rgb(5 200 90 / 0.45);
+  animation: vaka-tile-glow 3.6s ease-in-out infinite;
+}
+.vaka-tile img { width: 100%; height: 100%; object-fit: contain; transform: translateY(calc(var(--u) * -36)) scale(1.36); }
+.vaka-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--u) * 400);
+  height: calc(var(--u) * 268);
+  border: calc(var(--u) * 2) solid rgb(120 240 110 / 0.5);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  mask-image: linear-gradient(90deg, black, transparent 26%, transparent 74%, black);
+  animation: vaka-ring 3.6s ease-in-out infinite;
+}
+.vaka-ring-outer {
+  width: calc(var(--u) * 462);
+  height: calc(var(--u) * 296);
+  border-color: rgb(120 240 110 / 0.28);
+  animation-delay: -1.2s;
+}
+
+/* ---- Greeting pill ---- */
+.vaka-greeting {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--u) * 10);
+  margin-top: calc(var(--u) * 6);
+  padding: calc(var(--u) * 9) calc(var(--u) * 36) calc(var(--u) * 9) calc(var(--u) * 26);
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #0a7246, #2a9a66 55%, #0a7246);
+  font-size: max(0.75rem, calc(var(--u) * 26));
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.vaka-sun { width: max(1.125rem, calc(var(--u) * 40)); height: max(1.125rem, calc(var(--u) * 40)); animation: vaka-spin 18s linear infinite; }
+
+/* ---- Name and tagline ---- */
+.vaka-name {
+  margin-top: calc(var(--u) * 2);
+  font-family: 'Montserrat', 'Poppins', var(--font-sans);
+  font-size: calc(var(--u) * 107);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: 0.04em;
+  background: linear-gradient(180deg, #e8f83f 8%, #a5ea2d 48%, #1fc72d 92%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: vestige-shimmer-text 5s ease-in-out infinite;
 }
-
-@keyframes vestige-fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-@keyframes vestige-fade-in { to { opacity: 1; } }
-@keyframes vestige-pop { 0% { opacity: 0; transform: scale(0.7) rotate(-8deg); } 100% { opacity: 1; transform: none; } }
-@keyframes vestige-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
-@keyframes vestige-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -20px) scale(1.08); }
-  66% { transform: translate(-20px, 25px) scale(0.95); }
+.vaka-tagline {
+  margin-top: calc(var(--u) * -2);
+  font-size: calc(var(--u) * 49);
+  font-weight: 600;
+  line-height: 1.03;
+  letter-spacing: -0.005em;
+  text-shadow: 0 2px 14px rgb(0 40 30 / 0.45);
 }
-@keyframes vestige-spin { to { transform: rotate(360deg); } }
-@keyframes vestige-ring {
-  0% { transform: scale(1); opacity: 0.55; }
-  100% { transform: scale(1.55); opacity: 0; }
-}
-@keyframes vestige-leaf {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-18px) rotate(10deg); }
-  50% { transform: translateY(-6px) rotate(-6deg); }
-  75% { transform: translateY(-22px) rotate(6deg); }
-}
-@keyframes vestige-sweep { to { transform: translateX(120%); } }
-@keyframes vestige-shimmer-bg { to { background-position: -200% 0; } }
-@keyframes vestige-shimmer-text { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
-
-@media (prefers-reduced-motion: reduce) {
-  .v-fade-up, .v-fade-in, .v-pop { animation: none; opacity: 1; }
-  .v-float, .v-float-slow, .v-drift, .v-spin-slow, .v-ring, .v-leaf,
-  .v-text-shimmer, .vestige-card-bar, .vestige-btn::after { animation: none !important; }
-}
-
-/* ---- Vestige auth: extra motion (v2) ---- */
-@property --v-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-/* Rotating glowing border around the form card. */
-.vestige-glow-border {
-  position: relative;
-  border-radius: 1.6rem;
-  padding: 1.5px;
-  background: conic-gradient(from var(--v-angle), transparent 0deg, var(--accent-400) 60deg, var(--vestige-gold) 120deg, transparent 180deg, transparent 360deg);
-  animation: vestige-angle 5s linear infinite;
-}
-.vestige-glow-border::before {
-  content: '';
+.vaka-you { position: relative; display: inline-block; color: #d2f209; font-weight: 700; }
+.vaka-you svg {
   position: absolute;
-  inset: -10px;
-  border-radius: inherit;
-  background: inherit;
-  filter: blur(22px);
-  opacity: 0.35;
-  z-index: -1;
-}
-@keyframes vestige-angle { to { --v-angle: 360deg; } }
-
-/* Moving aurora behind the form. */
-.vestige-aurora {
-  background:
-    radial-gradient(40% 35% at 20% 30%, color-mix(in oklab, var(--accent-400) 22%, transparent), transparent 70%),
-    radial-gradient(35% 30% at 80% 70%, color-mix(in oklab, var(--vestige-gold) 22%, transparent), transparent 70%),
-    radial-gradient(30% 30% at 60% 20%, color-mix(in oklab, var(--accent-500) 14%, transparent), transparent 70%);
-  filter: blur(10px);
-  animation: vestige-aurora 16s ease-in-out infinite alternate;
-}
-@keyframes vestige-aurora {
-  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-  50% { transform: translate(-4%, 3%) rotate(8deg) scale(1.1); }
-  100% { transform: translate(3%, -3%) rotate(-6deg) scale(1.05); }
+  left: 0;
+  bottom: calc(var(--u) * -9);
+  width: calc(100% + var(--u) * 16);
+  height: calc(var(--u) * 12);
 }
 
-/* Rising gold particles in the hero panel. */
-.v-particle {
-  position: absolute;
-  bottom: -12px;
+/* ---- Feature cards ---- */
+.vaka-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 32rem;
+}
+.vaka-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 1rem;
+  background: rgb(1 58 58 / 0.88);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  transition: border-color 220ms ease, background-color 220ms ease;
+}
+.vaka-feature:hover { border-color: rgb(168 239 44 / 0.55); background: rgb(1 76 70 / 0.92); }
+.vaka-feature svg { width: 1.75rem; height: 1.75rem; flex-shrink: 0; color: #a8ef2c; stroke-width: 1.8; }
+
+/* ---- Form card ---- */
+.vaka-card {
+  padding: 1.75rem 1.5rem;
+  border: 2px solid rgb(176 244 205 / 0.82);
+  border-radius: 1.875rem;
+  background: linear-gradient(145deg, rgb(7 62 72 / 0.9), rgb(4 40 58 / 0.9));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 0 20px rgb(120 240 170 / 0.35);
+}
+.vaka-card.v-fade-up {
+  animation: vestige-fade-up 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards, vaka-card-glow 4s ease-in-out infinite;
+}
+.vaka-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1.5rem 0.625rem 1.25rem;
+  border: 1px solid rgb(90 220 130 / 0.5);
   border-radius: 9999px;
-  background: radial-gradient(circle, #fde68a, rgb(253 230 138 / 0));
-  opacity: 0;
-  animation: vestige-rise linear infinite;
+  background: rgb(4 70 66 / 0.85);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.5;
 }
-@keyframes vestige-rise {
-  0% { transform: translateY(0) translateX(0); opacity: 0; }
-  10% { opacity: 0.9; }
-  90% { opacity: 0.6; }
-  100% { transform: translateY(-105vh) translateX(30px); opacity: 0; }
+.vaka-badge b { font-weight: 700; color: #d2f209; }
+.vaka-group { width: 1.875rem; height: 1.625rem; }
+.vaka-footer {
+  width: fit-content;
+  margin: 0.75rem auto 0;
+  padding: 0.25rem 0.875rem;
+  border-radius: 9999px;
+  background: rgb(1 35 50 / 0.72);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-ink);
 }
 
-/* Logo shine sweep. */
-.v-logo-shine { position: relative; overflow: hidden; }
-.v-logo-shine::after {
+.vestige-theme label { color: #fff; font-size: 1rem; font-weight: 500; }
+.vestige-theme input { background-color: rgb(4 28 44 / 0.62); }
+.vaka-card label + div > input { height: 3rem; font-size: 1rem; }
+.vaka-card label + div > input:not([type='password']), .vaka-card label + div > input[type='password'] { padding-left: 2.875rem; }
+.vaka-card label + div > svg { left: 1rem; width: 1.25rem; height: 1.25rem; }
+.vaka-card label + div > button svg { width: 1.25rem; height: 1.25rem; }
+.vaka-card [id$='-error'] { font-size: 0.9375rem; }
+.vaka-card a { font-size: 0.9375rem; }
+/* Keep browser-saved logins dark instead of the default pale blue. */
+.vestige-theme input:-webkit-autofill,
+.vestige-theme input:-webkit-autofill:hover,
+.vestige-theme input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  box-shadow: 0 0 0 1000px #0a2a39 inset;
+  transition: background-color 9999s;
+}
+
+/* Lime pill button, with a shine that sweeps across on hover. */
+.vestige-theme button[type='submit'] {
+  position: relative;
+  overflow: hidden;
+  height: 3.375rem;
+  border-radius: 9999px;
+  background-image: linear-gradient(90deg, #e2fb3a, #5ce433);
+  color: #06170f;
+  font-size: 1.125rem;
+  font-weight: 600;
+  box-shadow: 0 0 22px rgb(150 240 50 / 0.45);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+.vestige-theme button[type='submit']:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px rgb(150 240 50 / 0.7);
+  filter: saturate(1.1);
+}
+.vestige-theme button[type='submit']:not(:disabled):active { transform: translateY(0); }
+.vestige-theme button[type='submit']::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.85) 50%, transparent 65%);
-  transform: translateX(-130%);
-  animation: vestige-logo-shine 4.5s ease-in-out 1.2s infinite;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.55) 50%, transparent 70%);
+  transform: translateX(-120%);
+  pointer-events: none;
 }
-@keyframes vestige-logo-shine { 0% { transform: translateX(-130%); } 30%, 100% { transform: translateX(130%); } }
+.vestige-theme button[type='submit']:not(:disabled):hover::after { animation: vestige-sweep 900ms ease; }
 
-/* Word-by-word headline reveal. */
-.v-word {
-  display: inline-block;
-  opacity: 0;
-  filter: blur(8px);
-  transform: translateY(0.4em);
-  animation: vestige-word 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+/* ---- Desktop: the composition of the 1451x739 design ---- */
+@media (min-width: 1024px) {
+  .vaka-grid {
+    min-height: 100dvh;
+    grid-template-columns: calc(var(--u) * 743) minmax(26rem, min(calc(var(--u) * 515), 38rem));
+    grid-template-rows: auto auto;
+    align-content: center;
+    grid-template-areas: 'brand form' 'features form';
+    justify-content: center;
+    justify-items: stretch;
+    gap: calc(var(--u) * 16) calc(var(--u) * 20);
+    padding: calc(var(--u) * 18) calc(var(--u) * 44) calc(var(--u) * 18) calc(var(--u) * 16);
+  }
+  /* A tall form must not stretch the left side: keep the logo block and cards together, centred. */
+  .vaka-brand { grid-area: brand; align-self: end; }
+  .vaka-form { grid-area: form; align-self: center; max-width: none; }
+  /* Same height as the footer, so the card itself stays centred on screen. */
+  .vaka-form::before { content: ''; display: block; height: 2.25rem; }
+  .vaka-features {
+    grid-area: features;
+    align-self: start;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: calc(var(--u) * 9) calc(var(--u) * 14);
+    max-width: none;
+  }
+  .vaka-feature { gap: calc(var(--u) * 13); padding: calc(var(--u) * 9) calc(var(--u) * 8) calc(var(--u) * 9) calc(var(--u) * 16); font-size: max(0.68rem, calc(var(--u) * 12.5)); }
+  .vaka-feature svg { width: calc(var(--u) * 30); height: calc(var(--u) * 30); }
+  .vaka-card { padding: 1.875rem 2.5rem 2.5rem 3rem; }
 }
-@keyframes vestige-word { to { opacity: 1; filter: blur(0); transform: none; } }
 
-/* Mini chat preview in the hero. */
-.v-bubble {
-  opacity: 0;
-  transform: translateY(10px) scale(0.92);
-  animation: vestige-bubble 9s ease-in-out infinite;
+/* ---- Phones and tablets: a smaller brand block, so the form is reached quickly ---- */
+@media (max-width: 1023.98px) {
+  .vestige-theme { --u: 0.62px; }
+  .vaka-grid {
+    gap: 1.25rem;
+    padding: max(1.25rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1.25rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  }
 }
-@keyframes vestige-bubble {
-  0% { opacity: 0; transform: translateY(10px) scale(0.92); }
-  6%, 88% { opacity: 1; transform: none; }
-  96%, 100% { opacity: 0; transform: translateY(-6px) scale(0.98); }
+@media (max-width: 480px) {
+  .vestige-theme { --u: 0.5px; }
+  .vaka-card { padding: 1.25rem; border-radius: 1.5rem; }
+  .vaka-badge { padding: 0.5rem 1.125rem 0.5rem 0.875rem; font-size: 0.9375rem; }
+  .vaka-features { gap: 0.5rem; }
+  .vaka-feature { gap: 0.5rem; padding: 0.625rem; font-size: 0.7rem; }
+  .vaka-feature svg { width: 1.25rem; height: 1.25rem; }
 }
-.v-typing-dot { animation: typing-dot 1.2s infinite ease-in-out; }
+/* Short phones (and when there is little height): shrink further and drop the tagline. */
+@media (max-width: 1023.98px) and (max-height: 700px) {
+  .vestige-theme { --u: 0.4px; }
+  .vaka-grid { gap: 0.875rem; padding-top: 0.875rem; }
+  .vaka-tagline { display: none; }
+}
+/* Phones held sideways: brand on the left, form on the right. */
+@media (max-width: 1023.98px) and (max-height: 500px) and (orientation: landscape) {
+  .vaka-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-areas: 'brand form' 'features features';
+    align-items: center;
+    justify-items: stretch;
+  }
+  .vaka-brand { grid-area: brand; }
+  .vaka-form { grid-area: form; max-width: none; }
+  .vaka-features { grid-area: features; grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: none; }
+  .vaka-tagline { display: block; font-size: 1.125rem; margin-top: 0.25rem; }
+  .vaka-card { padding: 1rem 1.25rem; }
+}
 
-/* Inputs inside auth screens: lift + soft glow on focus. */
-.vestige-theme input {
-  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
-}
-/* Keep the leading icon above the input and tint it green while focused. */
-.vestige-theme div:has(> input) > svg { z-index: 1; transition: color 200ms ease; }
-.vestige-theme div:has(> input:focus) > svg { color: var(--color-brand-600); }
-.vestige-theme input:focus {
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent-500) 18%, transparent), 0 10px 24px -14px color-mix(in oklab, var(--accent-600) 60%, transparent);
-}
-.vestige-theme label { transition: color 200ms ease; }
-.vestige-theme div:has(> div > input:focus) > label { color: var(--color-brand-600); }
+/* ---- Entrance animations ---- */
+.v-fade-up { opacity: 0; animation: vestige-fade-up 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.v-fade-in { opacity: 0; animation: vestige-fade-in 900ms ease forwards; }
+.v-pop { opacity: 0; animation: vestige-pop 800ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-/* Card subtle tilt on hover (desktop). */
-@media (hover: hover) {
-  .v-tilt { transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1); }
-  .v-tilt:hover { transform: translateY(-3px); }
+@keyframes vestige-fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes vestige-fade-in { to { opacity: 1; } }
+@keyframes vestige-pop { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: none; } }
+@keyframes vestige-sweep { to { transform: translateX(120%); } }
+@keyframes vaka-wave { from { transform: translateY(-5px); } to { transform: translateY(6px); } }
+@keyframes vaka-spin { to { transform: rotate(360deg); } }
+@keyframes vaka-ring {
+  0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.035); }
+}
+@keyframes vaka-tile-glow {
+  0%, 100% { box-shadow: 0 0 calc(var(--u) * 28) rgb(71 226 63 / 0.65), 0 0 calc(var(--u) * 80) rgb(5 200 90 / 0.4); }
+  50% { box-shadow: 0 0 calc(var(--u) * 42) rgb(71 226 63 / 0.9), 0 0 calc(var(--u) * 110) rgb(5 200 90 / 0.55); }
+}
+@keyframes vaka-card-glow {
+  0%, 100% { box-shadow: 0 0 16px rgb(120 240 170 / 0.3), inset 0 0 22px rgb(120 240 170 / 0.05); }
+  50% { box-shadow: 0 0 28px rgb(120 240 170 / 0.5), inset 0 0 28px rgb(120 240 170 / 0.09); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vestige-glow-border, .vestige-aurora, .v-particle, .v-logo-shine::after, .v-typing-dot { animation: none !important; }
-  .v-particle { display: none; }
-  .v-word, .v-bubble { animation: none; opacity: 1; filter: none; transform: none; }
+  .v-fade-up, .v-fade-in, .v-pop { animation: none; opacity: 1; }
+  .vaka-wave, .vaka-sun, .vaka-ring, .vaka-tile, .vestige-theme button[type='submit']::after { animation: none !important; }
+  .vaka-card.v-fade-up { animation: none; opacity: 1; }
 }
-
-/* Namaste greeting: a gentle bow, repeated now and then. */
-.v-namaste { animation: vestige-namaste 4s ease-in-out 0.8s infinite; transform-origin: 50% 80%; }
-@keyframes vestige-namaste {
-  0%, 60%, 100% { transform: rotate(0) translateY(0); }
-  10% { transform: rotate(-10deg) translateY(1px); }
-  20% { transform: rotate(0) translateY(2px) scale(0.95); }
-  30% { transform: rotate(0) translateY(0) scale(1.08); }
-  40% { transform: rotate(0) translateY(0) scale(1); }
-}
-@media (prefers-reduced-motion: reduce) { .v-namaste { animation: none; } }
-
-/* ---- Vestige watermarks ---- */
-/* Repeating diagonal text behind the form. */
-.vestige-watermark-text {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='460' height='220'%3E%3Ctext x='0' y='120' transform='rotate(-24 230 110)' font-family='Inter,Segoe UI,sans-serif' font-size='17' font-weight='700' letter-spacing='3' fill='%230f8a3e' fill-opacity='0.07'%3EVAKA %C2%B7 GOOD MORNING VESTIGIAN%3C/text%3E%3C/svg%3E");
-  background-size: 460px 220px;
-  mask-image: radial-gradient(ellipse at center, black 35%, transparent 85%);
-  animation: vestige-wm-pan 60s linear infinite;
-}
-@keyframes vestige-wm-pan { to { background-position: 460px 220px; } }
-
-/* Large faded logo behind the form (white JPG background disappears via blend). */
-.vestige-watermark-logo {
-  opacity: 0.1;
-  mix-blend-mode: multiply;
-  filter: grayscale(0.2);
-}
-:root[data-theme='dark'] .vestige-watermark-logo {
-  opacity: 0.12;
-  mix-blend-mode: screen;
-  filter: grayscale(1) invert(1);
-}
-
-/* Huge outlined brand word in the hero panel. */
-.vestige-watermark-word {
-  color: transparent;
-  -webkit-text-stroke: 1.5px rgb(255 255 255 / 0.1);
-  letter-spacing: 0.06em;
-  line-height: 1;
-  user-select: none;
-}
-
-@media (prefers-reduced-motion: reduce) { .vestige-watermark-text { animation: none; } }

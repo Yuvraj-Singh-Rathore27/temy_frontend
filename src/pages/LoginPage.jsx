@@ -41,6 +41,7 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
+      hideHeading
       title="Welcome back"
       subtitle="Sign in to continue your conversations."
       footer={
@@ -82,7 +83,7 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </div>
-        <Button type="submit" size="lg" fullWidth loading={form.submitting} className="vestige-btn mt-2 rounded-xl font-semibold">
+        <Button type="submit" size="lg" fullWidth loading={form.submitting}>
           Sign in
         </Button>
       </form>
