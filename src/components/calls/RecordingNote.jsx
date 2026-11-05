@@ -61,7 +61,7 @@ export function RecordingNote({ message, me, highlighted }) {
 
         {!unavailable && (
           <div className="mt-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-            <span className="mr-auto text-[11px] text-ink-faint">Saved on the server · not end-to-end encrypted</span>
+            <span className="mr-auto text-[11px] text-ink-faint">Saved on the server</span>
             <a href={assetUrl(`${data.url}?download=1`)} className="flex items-center gap-1 font-medium text-brand-700 hover:underline">
               <Download className="size-3.5" aria-hidden /> Download
             </a>

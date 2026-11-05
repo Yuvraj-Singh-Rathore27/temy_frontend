@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Copy, Forward, Pencil, Pin, PinOff, Plus, Reply, Star, StarOff, Sticker, Trash2 } from 'lucide-react';
+import { Copy, Forward, Info, Pencil, Pin, PinOff, Plus, Reply, Star, StarOff, Sticker, Trash2 } from 'lucide-react';
 import { useClickOutside } from '../../hooks/useClickOutside.js';
 import { cn } from '../../utils/misc.js';
 import { EmojiPicker, QUICK_REACTIONS } from './EmojiPicker.jsx';
@@ -40,6 +40,7 @@ export function MessageMenu({ message, position, options, onAction, onClose }) {
     { name: 'star', label: message.starred ? 'Unstar' : 'Star', icon: message.starred ? StarOff : Star },
     options.canPin && { name: 'pin', label: options.isPinned ? 'Unpin' : 'Pin', icon: options.isPinned ? PinOff : Pin },
     options.canEdit && { name: 'edit', label: 'Edit', icon: Pencil },
+    options.canViewDetails && { name: 'details', label: 'Message info', icon: Info },
     options.canSaveSticker && { name: 'saveSticker', label: 'Save sticker', icon: Sticker },
     { name: 'delete', label: 'Delete', icon: Trash2, danger: true },
   ].filter(Boolean);

@@ -1,37 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Laptop, Lock, ShieldAlert, ShieldCheck, Trash2 } from 'lucide-react';
+import { Laptop, Lock, ShieldCheck, Trash2 } from 'lucide-react';
 import { e2eeApi } from '../../api/endpoints.js';
 import { securityCodeWith } from '../../e2ee/session.js';
-import { useE2eeStatus } from '../../e2ee/useE2ee.js';
 import { formatLastSeen } from '../../utils/format.js';
 import { Button } from '../ui/Button.jsx';
 import { Modal } from '../ui/Modal.jsx';
 import { Spinner } from '../ui/Spinner.jsx';
 import { useToast } from '../ui/Toast.jsx';
 
-/** "🔒 Messages are end-to-end encrypted" (top of every chat). */
+/** How chats are protected (top of every chat). */
 export function EncryptionNotice({ className }) {
   return (
     <p className={className}>
       <span className="inline-flex max-w-md items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-left text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
         <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        Messages and calls are end-to-end encrypted. No one outside this chat, not even VAKA, can read or listen to them.
+        Messages are encrypted when stored on VAKA's servers and are available on every device you sign in to.
       </span>
     </p>
-  );
-}
-
-/** Shown instead of the message box when this page can't do encryption (not HTTPS). */
-export function EncryptionUnavailable() {
-  const status = useE2eeStatus();
-  if (status !== 'unavailable' && status !== 'error') return null;
-  return (
-    <div className="flex items-start gap-2 border-t border-line bg-amber-50 px-gutter py-2.5 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-      <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-      {status === 'unavailable'
-        ? 'Encrypted messaging needs a secure connection. Open VAKA over HTTPS (or on localhost) to send and read messages.'
-        : 'Setting up encryption on this device failed. It will retry when the connection is back.'}
-    </div>
   );
 }
 

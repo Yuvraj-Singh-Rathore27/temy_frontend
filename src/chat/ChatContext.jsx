@@ -26,18 +26,14 @@ import { createClientId } from '../utils/misc.js';
 import { chatReducer, emptyThread, initialChatState } from './chatReducer.js';
 import { createSocket, emitWithAck } from './socket.js';
 import {
-  buildContent,
   decryptLocationUpdate,
   decryptMessage,
   decryptPin,
   e2eeSession as e2eeSessionState,
   encryptAndSend,
-  encryptUpload,
   endSession as endE2eeSession,
   onSessionChange as onE2eeSessionChange,
   forgetText,
-  rememberLiveKey,
-  sealFirstPosition,
   sealLivePosition,
   startSession as startE2eeSession,
 } from '../e2ee/session.js';
@@ -200,51 +196,30 @@ export function ChatProvider({ children }) {
     return (await conversationsApi.send(conversationId, body)).message;
   }, []);
 
-  /** Who an encrypted message @mentions (the server can't read the text to find out). */
-  const mentionedIds = useCallback(
-    (conversationId, body) => {
-      const members = stateRef.current.groups[conversationId]?.members ?? [];
-      return members.filter((m) => m.id !== me && mentionsName(body, m.name)).map((m) => m.id);
-    },
-    [me],
-  );
-
   /**
-   * Send a message, end-to-end encrypted: text, sticker, location, the quoted
-   * text and the keys of its files are encrypted on this device for every device
-   * in the chat. The server only ever receives ciphertext.
+   * Send a message. The server encrypts the text for storage and holds the key, so the
+   * chat is readable on every device the user signs in to.
    */
   const deliver = useCallback(async (message) => {
     const socket = socketRef.current;
     const { conversationId, clientId } = message;
     if (!socket?.connected && !navigator.onLine) return; // stays pending; resent on reconnect
-    const replyToId = message.replyTo?.id ?? undefined;
-    const attachmentIds = message.attachmentIds ?? [];
-    const location = message.locationRequest; // { latitude, longitude, accuracy, liveMinutes? }
-    const liveMinutes = location?.liveMinutes ?? null;
+    const request = message.locationRequest; // { latitude, longitude, accuracy, liveMinutes? }
+    const location = request
+      ? { latitude: request.latitude, longitude: request.longitude, accuracy: request.accuracy ?? undefined, liveMinutes: request.liveMinutes ?? undefined }
+      : undefined;
     try {
-      const content = buildContent({
-        body: message.body,
-        sticker: message.sticker,
-        location: liveMinutes ? null : location,
-        liveMinutes,
-        replyTo: message.replyTo,
-        attachments: message.attachmentMeta ?? [],
-      });
-      const { result, messageKey } = await encryptAndSend(conversationId, content, async (encrypted, key) =>
-        transmit({
+      const saved = await decryptMessage(
+        await transmit({
           conversationId,
           clientId,
-          replyToId,
-          attachmentIds,
-          encrypted,
-          // A live location's positions are encrypted with the message's own key.
-          encryptedLocation: liveMinutes ? { ...(await sealFirstPosition(key, location)), liveMinutes } : undefined,
-          mentions: mentionedIds(conversationId, message.body),
+          body: message.body ?? '',
+          replyToId: message.replyTo?.id ?? undefined,
+          attachmentIds: message.attachmentIds ?? [],
+          sticker: message.sticker ?? undefined,
+          location,
         }),
       );
-      if (liveMinutes && result.id) await rememberLiveKey(result.id, messageKey);
-      const saved = await decryptMessage(result);
       dispatch({ type: 'message/received', message: saved, countUnread: false });
       releaseUpload(clientId);
       // A live location starts tracking once the server has it.
@@ -259,7 +234,7 @@ export function ChatProvider({ children }) {
         error: retryable ? 'Not sent. Tap to retry.' : error.message,
       });
     }
-  }, [transmit, mentionedIds]);
+  }, [transmit]);
 
   /** An optimistic message shown right away, before the server has it. */
   const outgoing = useCallback(
@@ -336,25 +311,7 @@ export function ChatProvider({ children }) {
         for (let item = queue.shift(); item; item = queue.shift()) {
           let lastSent = 0;
           // Prepared on the server (a GIPHY GIF it downloads, one of my stickers): nothing to upload.
-          // Everything else is encrypted here first; its key goes into the (encrypted) message.
-          let upload = item;
-          if (!item.prepare) {
-            const sealed = await encryptUpload(item.blob, item.thumbnail);
-            upload = { ...item, blob: sealed.blob, thumbnail: sealed.thumbnail, encrypted: true };
-            job.meta.set(item.localId, {
-              key: sealed.key,
-              iv: sealed.iv,
-              tiv: sealed.tiv ?? undefined,
-              name: item.name,
-              mime: item.mimeType,
-              size: item.size,
-              w: item.width ?? undefined,
-              h: item.height ?? undefined,
-              dur: item.durationMs ?? undefined,
-              pages: item.pageCount ?? undefined,
-            });
-          }
-          const attachment = item.prepare ? await item.prepare() : await uploadAttachment(upload, {
+          const attachment = item.prepare ? await item.prepare() : await uploadAttachment(item, {
             conversationId,
             signal: job.controller.signal,
             onProgress: (progress) => {
@@ -1209,10 +1166,9 @@ export function ChatProvider({ children }) {
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
 
-    // Keys first, so the very first messages loaded can already be decrypted (but never wait
-    // forever: if setup is slow, load now and reload what's open once it's ready).
-    const setup = startE2eeSession(me);
-    // Encryption became ready after the app had already loaded: decrypt what's on screen.
+    // Device keys only open older end-to-end encrypted messages, so chats load without waiting for them.
+    startE2eeSession(me);
+    // The keys became ready after the app had loaded: decrypt older messages on screen.
     const stopWatching = onE2eeSessionChange((current) => {
       if (closed || current.status !== 'ready') return;
       const s = stateRef.current;
@@ -1222,15 +1178,12 @@ export function ChatProvider({ children }) {
       for (const [conversationId] of pendingThreads) loadThread(Number(conversationId));
       for (const [conversationId, pins] of Object.entries(s.pins)) if (pins.some(notReady)) loadPins(Number(conversationId));
     });
-    Promise.race([setup, new Promise((resolve) => setTimeout(resolve, 6000))]).finally(() => {
-      if (closed) return;
-      socket.connect();
-      loadConversations();
-      loadContacts();
-      resumeLiveShares();
-      loadSettings();
-      loadWallpapers();
-    });
+    socket.connect();
+    loadConversations();
+    loadContacts();
+    resumeLiveShares();
+    loadSettings();
+    loadWallpapers();
 
     const timers = typingTimers.current;
     return () => {

@@ -315,8 +315,9 @@ export function CallProvider({ children }) {
     const stream = await getMedia(type);
     localRef.current = stream;
     setLocalStream(stream);
-    if (type === 'video') setCameras(await listDevices('videoinput'));
-    if ('setSinkId' in HTMLMediaElement.prototype) setOutputs(await listDevices('audiooutput'));
+    // Not awaited: Firefox holds enumerateDevices() back while the page has no focus, which must not stall the call.
+    if (type === 'video') listDevices('videoinput').then(setCameras);
+    if ('setSinkId' in HTMLMediaElement.prototype) listDevices('audiooutput').then(setOutputs);
     return stream;
   }, []);
 

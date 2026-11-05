@@ -1,16 +1,156 @@
-import { useMemo, useState } from 'react';
-import { Check, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { ArrowLeft, Check, Search } from 'lucide-react';
+import { messagesApi } from '../../api/endpoints.js';
 import { selectConversationList } from '../../chat/chatReducer.js';
 import { useChatActions, useChatState } from '../../chat/ChatContext.jsx';
+import { formatDayLabel, formatTime } from '../../utils/format.js';
 import { canDeleteForEveryone } from '../../utils/messages.js';
 import { cn } from '../../utils/misc.js';
 import { Avatar } from '../ui/Avatar.jsx';
 import { Button } from '../ui/Button.jsx';
 import { inputClass } from '../ui/Input.jsx';
 import { Modal } from '../ui/Modal.jsx';
+import { Spinner } from '../ui/Spinner.jsx';
+import { MessageStatus } from './MessageStatus.jsx';
 import { useToast } from '../ui/Toast.jsx';
 import { messagePreview } from '../../utils/media.js';
 import { canSend, chatAvatar, chatTitle } from '../../utils/conversation.js';
+
+const DETAILS_REFRESH_MS = 5000;
+
+/** "Today, 14:05"; receipts from before times were saved have none. */
+const receiptTime = (value) => (value ? `${formatDayLabel(value)}, ${formatTime(value)}` : 'Time not recorded');
+
+function ReceiptHeading({ status, children }) {
+  return (
+    <h3 className="flex items-center justify-between gap-2 px-4 py-3 text-sm font-semibold text-brand-600">
+      {children}
+      <MessageStatus status={status} tone="onSurface" className="size-4" />
+    </h3>
+  );
+}
+
+/** A group's "Read by" or "Delivered to" card: photo, name and time per person, and how many are still to come. */
+function ReceiptGroup({ title, status, members, timeOf, remaining }) {
+  return (
+    <section className="rounded-card bg-surface shadow-bubble">
+      <ReceiptHeading status={status}>{title}</ReceiptHeading>
+      {members.length > 0 && (
+        <ul className="divide-y divide-line border-t border-line">
+          {members.map((member) => (
+            <li key={member.id} className="flex items-center gap-3 px-4 py-2.5">
+              <Avatar user={member} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-ink">{member.name}</p>
+                <p className="text-xs text-ink-muted">{receiptTime(timeOf(member))}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {remaining > 0 && <p className="border-t border-line px-4 py-2.5 text-xs text-ink-muted">{remaining} remaining</p>}
+    </section>
+  );
+}
+
+/** A one-to-one chat: just when it was read and delivered. */
+function ReceiptRow({ title, status, time }) {
+  return (
+    <section className="rounded-card bg-surface shadow-bubble">
+      <ReceiptHeading status={status}>{title}</ReceiptHeading>
+      <p className="border-t border-line px-4 py-2.5 text-xs text-ink-muted">{time ? receiptTime(time) : 'Not yet'}</p>
+    </section>
+  );
+}
+
+/**
+ * "Message info": the message, then who it reached and who read it, with photos and times.
+ * A full page on phones and a side panel on larger screens. Stays up to date while open.
+ */
+export function MessageDetailsDialog({ message, isGroup, onClose }) {
+  const [state, setState] = useState({ status: 'loading' });
+
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      messagesApi
+        .details(message.id)
+        .then((details) => alive && setState({ status: 'ready', details }))
+        .catch((error) => alive && setState((current) => (current.details ? current : { status: 'error', error: error.message })));
+    load();
+    const timer = setInterval(load, DETAILS_REFRESH_MS);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [message.id]);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const details = state.details;
+  const read = details?.members.filter((m) => m.status === 'read') ?? [];
+  const delivered = details?.members.filter((m) => m.status === 'delivered') ?? [];
+  const peer = details?.members[0];
+  const overall = details ? (details.total > 0 && details.readCount === details.total ? 'read' : details.total > 0 && details.deliveredCount === details.total ? 'delivered' : 'sent') : (message.status ?? 'sent');
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="message-info-title"
+        className="flex h-full w-full flex-col bg-surface-sunken shadow-pop md:max-w-md"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="flex shrink-0 items-center gap-3 border-b border-line bg-surface px-3 py-3">
+          <button type="button" onClick={onClose} autoFocus aria-label="Back" className="rounded-full p-2 text-ink-soft hover:bg-surface-sunken">
+            <ArrowLeft className="size-5" />
+          </button>
+          <h2 id="message-info-title" className="text-lg font-semibold text-ink">
+            Message info
+          </h2>
+        </header>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+          <div className="flex justify-end py-2">
+            <div className="max-w-[85%] rounded-bubble bg-bubble-out px-3.5 pt-2 pb-1.5 text-bubble-out-ink shadow-bubble">
+              <p className="text-sm break-words whitespace-pre-wrap">{message.body || messagePreview(message)}</p>
+              <p className="mt-0.5 flex items-center justify-end gap-1 text-[11px] opacity-80">
+                {formatTime(message.createdAt)}
+                <MessageStatus status={overall} />
+              </p>
+            </div>
+          </div>
+          {state.status === 'loading' && (
+            <div className="flex justify-center py-6">
+              <Spinner />
+            </div>
+          )}
+          {state.status === 'error' && <p className="text-sm text-danger">{state.error}</p>}
+          {details && isGroup && (
+            <>
+              <ReceiptGroup title="Read by" status="read" members={read} timeOf={(m) => m.readAt} remaining={details.total - details.readCount} />
+              <ReceiptGroup title="Delivered to" status="delivered" members={delivered} timeOf={(m) => m.deliveredAt} remaining={details.total - details.deliveredCount} />
+            </>
+          )}
+          {details && !isGroup && (
+            <>
+              <ReceiptRow title="Read" status="read" time={peer?.readAt} />
+              <ReceiptRow title="Delivered" status="delivered" time={peer?.deliveredAt} />
+            </>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 /** "Delete for me" / "Delete for everyone" (the latter only when allowed). */
 export function DeleteMessageDialog({ message, onClose }) {

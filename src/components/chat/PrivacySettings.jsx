@@ -9,7 +9,6 @@ import { Input } from '../ui/Input.jsx';
 import { Modal } from '../ui/Modal.jsx';
 import { Segmented } from '../ui/Segmented.jsx';
 import { useToast } from '../ui/Toast.jsx';
-import { LinkedDevices } from './Encryption.jsx';
 
 const LAST_SEEN = [
   { value: 'everyone', label: 'Everyone' },
@@ -60,13 +59,6 @@ export function PrivacySettings() {
         <p className="mt-3 text-xs text-ink-muted">
           Your email is only shown to people who saved you as a contact. Others can find you by name, or by typing your full email address.
         </p>
-      </PanelSection>
-
-      <PanelSection title="Linked devices">
-        <p className="mb-2 text-xs text-ink-muted">
-          Each browser you use VAKA in has its own encryption keys. Remove the ones you no longer use; a new device can't read messages sent before it was set up.
-        </p>
-        <LinkedDevices />
       </PanelSection>
 
       <PanelSection title="Your data">

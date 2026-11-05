@@ -14,9 +14,9 @@ import { MessageStatus } from './MessageStatus.jsx';
 
 const LONG_PRESS_MS = 450;
 
-/** Why an end-to-end encrypted message can't be shown on this device. */
+/** Why an older end-to-end encrypted message can't be shown on this device. */
 const UNDECRYPTABLE = {
-  'no-key': 'This message was sent before you set up VAKA on this device, so it can only be read on your other devices.',
+  'no-key': 'This older message was end-to-end encrypted, so it can only be opened on a device that was signed in when it was sent.',
   failed: "This message couldn't be decrypted.",
   unavailable: 'Open VAKA over HTTPS to read encrypted messages.',
   'not-ready': 'Decrypting…',
@@ -240,7 +240,7 @@ export const MessageBubble = memo(function MessageBubble({
                   key={reaction.emoji}
                   type="button"
                   onClick={() => onReact(message, reaction.emoji)}
-                  title={reaction.mine ? 'You reacted — click to remove' : `${reaction.count} reaction${reaction.count > 1 ? 's' : ''}`}
+                  title={`${reaction.count} reaction${reaction.count > 1 ? 's' : ''}: see who reacted`}
                   className={cn(
                     'flex h-6 items-center gap-0.5 rounded-full border px-1.5 text-xs shadow-sm',
                     reaction.mine ? 'border-brand-300 bg-brand-50 text-brand-800' : 'border-line bg-surface text-ink-soft',

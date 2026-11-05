@@ -8,7 +8,6 @@ import { Panel, PanelSection } from '../layout/Panel.jsx';
 import { MediaGallery } from '../media/MediaGallery.jsx';
 import { Avatar } from '../ui/Avatar.jsx';
 import { ErrorState } from '../ui/States.jsx';
-import { SecurityCodeSection } from './Encryption.jsx';
 
 /** "Contact info" for the person on the other side of a chat. */
 export function PeerProfilePanel({ peer, conversationId, onClose }) {
@@ -81,10 +80,6 @@ export function PeerProfilePanel({ peer, conversationId, onClose }) {
           </p>
         </PanelSection>
       )}
-
-      <PanelSection>
-        <SecurityCodeSection peer={peer} />
-      </PanelSection>
 
       {error && <ErrorState message={error} onDismiss={() => setError('')} compact className="m-3" />}
 

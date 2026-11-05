@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Clock, Film, Plus, Search, Smile, Sticker as StickerIcon, X } from 'lucide-react';
 import { gifsApi, stickersApi } from '../../api/endpoints.js';
-import { recentEncryptedGifs } from '../../e2ee/session.js';
 import { useChatState } from '../../chat/ChatContext.jsx';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue.js';
 import { prepareSticker } from '../../utils/image.js';
@@ -97,9 +96,8 @@ function GifPanel({ onGif, onRecentGif }) {
   }, [view, searchAvailable, load]);
 
   useEffect(() => {
-    Promise.all([gifsApi.recent().then((r) => r.gifs, () => []), recentEncryptedGifs()]).then(([fromServer, onDevice]) => {
-      const gifs = [...onDevice, ...fromServer].sort((a, b) => b.id - a.id).slice(0, 30);
-      setRecent({ status: 'ready', gifs });
+    gifsApi.recent().then((r) => r.gifs, () => []).then((gifs) => {
+      setRecent({ status: 'ready', gifs: gifs.slice(0, 30) });
     });
   }, []);
 

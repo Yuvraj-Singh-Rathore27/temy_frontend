@@ -19,7 +19,8 @@ import { useToast } from '../ui/Toast.jsx';
 import { ChatHeader } from './ChatHeader.jsx';
 import { ConnectionBanner } from './ConnectionStatus.jsx';
 import { MessageComposer } from './MessageComposer.jsx';
-import { DeleteMessageDialog, ForwardDialog } from './MessageDialogs.jsx';
+import { DeleteMessageDialog, ForwardDialog, MessageDetailsDialog } from './MessageDialogs.jsx';
+import { ReactionSheet } from './ReactionSheet.jsx';
 import { MessageList } from './MessageList.jsx';
 import { GroupHeader } from './GroupHeader.jsx';
 import { GroupInfoPanel } from './GroupInfoPanel.jsx';
@@ -29,7 +30,6 @@ import { MessageMenu } from './MessageMenu.jsx';
 import { ChatSearchPanel } from './MessageResults.jsx';
 import { PeerProfilePanel } from './PeerProfilePanel.jsx';
 import { PinnedBar } from './PinnedBar.jsx';
-import { EncryptionUnavailable } from './Encryption.jsx';
 // Catch me up (AI) is turned off for now.
 // import { CatchUpPanel } from './CatchUpPanel.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
@@ -253,6 +253,7 @@ function OpenConversation({ conversation }) {
   useWindowFocus(markReadIfVisible);
 
   const report = useCallback((e) => toast.error(e.message), [toast]);
+  const openReactions = useCallback((message) => setDialog({ type: 'reactions', messageId: message.id }), []);
   const react = useCallback((message, emoji) => reactToMessage(message, emoji).catch(report), [reactToMessage, report]);
   const unpin = useCallback((messageId) => togglePin({ id: messageId, conversationId: id }).catch(report), [togglePin, id, report]);
 
@@ -281,6 +282,7 @@ function OpenConversation({ conversation }) {
           .save(message.attachments[0].id)
           .then(() => toast.show('Added to your stickers'))
           .catch(report);
+      case 'details':
       case 'forward':
       case 'delete':
         return setDialog({ type: name, message });
@@ -313,6 +315,7 @@ function OpenConversation({ conversation }) {
     canForward: isActionable(menuMessage) && !menuMessage.event,
     canPin: isActionable(menuMessage) && !menuMessage.event,
     canEdit: canEdit(menuMessage, me) && !menuMessage.event && allowedToSend,
+    canViewDetails: Boolean(menuMessage.id) && menuMessage.senderId === me && !menuMessage.event && !menuMessage.deletedAt,
     isPinned: Boolean(conversationPins?.some((p) => p.messageId === menuMessage.id)),
     // A custom sticker someone sent (built-in ones are always in the picker).
     canSaveSticker: !menuMessage.deletedAt && menuMessage.attachments?.length === 1 && menuMessage.attachments[0].kind === 'sticker' && Boolean(menuMessage.attachments[0].id),
@@ -382,7 +385,7 @@ function OpenConversation({ conversation }) {
         highlightId={highlightId}
         onOpenMenu={openMenu}
         onJump={jumpTo}
-        onReact={react}
+        onReact={openReactions}
         onOpenMedia={openMedia}
         wallpaper={wallpaper}
       />
@@ -401,7 +404,6 @@ function OpenConversation({ conversation }) {
         </div>
       ) : (
         <>
-        <EncryptionUnavailable />
         <MessageComposer
           conversationId={id}
           mode={composerMode}
@@ -431,6 +433,16 @@ function OpenConversation({ conversation }) {
       )}
       {dialog?.type === 'delete' && <DeleteMessageDialog message={dialog.message} onClose={closeDialog} />}
       {dialog?.type === 'forward' && <ForwardDialog message={dialog.message} onClose={closeDialog} />}
+      {dialog?.type === 'reactions' && thread.items.some((m) => m.id === dialog.messageId) && (
+        <ReactionSheet
+          message={thread.items.find((m) => m.id === dialog.messageId)}
+          me={me}
+          canReact={allowedToSend}
+          onReact={react}
+          onClose={closeDialog}
+        />
+      )}
+      {dialog?.type === 'details' && <MessageDetailsDialog message={dialog.message} isGroup={group} onClose={closeDialog} />}
       {sendFiles && (
         <SendMediaDialog
           conversationId={id}

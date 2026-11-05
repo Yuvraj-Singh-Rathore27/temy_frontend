@@ -98,8 +98,10 @@ export const messagesApi = {
   batch: (ids) => withMessages(http.get(`/messages/batch?ids=${ids.join(',')}`)),
   /** scope: 'me' | 'everyone' */
   remove: (id, scope) => http.delete(`${messagePath(id)}?scope=${scope}`),
+  reactions: (id) => http.get(messagePath(id, '/reactions')),
   react: (id, emoji) => http.put(messagePath(id, '/reaction'), { emoji }),
   unreact: (id) => http.delete(messagePath(id, '/reaction')),
+  details: (id) => http.get(messagePath(id, '/details')),
   star: (id) => http.put(messagePath(id, '/star')),
   unstar: (id) => http.delete(messagePath(id, '/star')),
   pin: (id) => http.put(messagePath(id, '/pin')),
