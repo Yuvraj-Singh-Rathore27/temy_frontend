@@ -1,4 +1,4 @@
-import { FileText, MessageCircleMore, MonitorSmartphone, Phone, Search, ShieldCheck } from 'lucide-react';
+import { FileText, Leaf, MessageCircleMore, MonitorSmartphone, Phone, Search, ShieldCheck } from 'lucide-react';
 
 export const LOGO_URL = 'https://s3-ap-southeast-1.amazonaws.com/vestdata/images/DistributorProfileImage/noimage.jpg';
 
@@ -89,6 +89,24 @@ function SunIcon() {
   );
 }
 
+/** Green speech bubble at the bottom of the logo tile. */
+function ChatBubble() {
+  return (
+    <svg className="vaka-bubble" viewBox="0 0 56 50" aria-hidden>
+      <defs>
+        <linearGradient id="vaka-bubble-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3ccb4e" />
+          <stop offset="1" stopColor="#0c9a3e" />
+        </linearGradient>
+      </defs>
+      <path d="M28 2C13.6 2 2 11.2 2 22.5c0 7 4.5 13.2 11.3 16.9L10 48l11.5-6.2c2.1.4 4.3.6 6.5.6 14.4 0 26-9 26-19.9S42.4 2 28 2Z" fill="url(#vaka-bubble-fill)" />
+      <circle cx="17" cy="22.5" r="3.4" fill="#fff" />
+      <circle cx="28" cy="22.5" r="3.4" fill="#fff" />
+      <circle cx="39" cy="22.5" r="3.4" fill="#fff" />
+    </svg>
+  );
+}
+
 /** Three-person icon on the card badge. */
 function GroupIcon() {
   return (
@@ -116,17 +134,28 @@ export function AuthLayout({ title, subtitle, children, footer, hideHeading = fa
             <span className="vaka-ring vaka-ring-outer" aria-hidden />
             <span className="vaka-ring" aria-hidden />
             <div className="vaka-tile">
-              <img src={LOGO_URL} alt="Vestige" draggable={false} />
+              <div className="vaka-mark">
+                <img src={LOGO_URL} alt="Vestige" draggable={false} />
+                <span className="vaka-reg" aria-hidden>
+                  ®
+                </span>
+              </div>
+              <svg className="vaka-swoosh" viewBox="0 0 120 6" preserveAspectRatio="none" aria-hidden>
+                <path d="M4 5C40 1 80 1 116 5C80 3 40 3 4 5Z" fill="#23a84a" />
+              </svg>
+              <p className="vaka-name">VAKA</p>
+              <ChatBubble />
             </div>
           </div>
 
           <p className="vaka-greeting v-fade-up" style={{ animationDelay: '150ms' }}>
             <SunIcon />
-            Good Morning Vestigians
+            Good Morning Vestigian
           </p>
 
-          <p className="vaka-name v-fade-up" style={{ animationDelay: '250ms' }}>
-            VAKA
+          <p className="vaka-wish v-fade-up" style={{ animationDelay: '290ms' }}>
+            <Leaf aria-hidden />
+            Wish You Wealth
           </p>
 
           <p className="vaka-tagline v-fade-up" style={{ animationDelay: '350ms' }}>
@@ -139,6 +168,12 @@ export function AuthLayout({ title, subtitle, children, footer, hideHeading = fa
                 <path d="M2 9C40 3 82 2 118 5" fill="none" stroke="currentColor" strokeWidth="1.800" strokeLinecap="round" />
               </svg>
             </span>
+          </p>
+
+          <p className="vaka-sub v-fade-up" style={{ animationDelay: '420ms' }}>
+            Stay connected with your Vestige team, uplines and customers —{' '}
+            <br />
+            fast, private and always in sync.
           </p>
         </section>
 
